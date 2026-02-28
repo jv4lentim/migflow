@@ -1,0 +1,55 @@
+export interface Migration {
+  version: string
+  name: string
+  filename: string
+  summary: string
+}
+
+export interface Column {
+  name: string
+  type: string
+  null: boolean
+  default: string | null
+  limit?: number
+}
+
+export interface Index {
+  name: string
+  columns: string[]
+  unique: boolean
+}
+
+export interface Table {
+  columns: Column[]
+  indexes: Index[]
+}
+
+export interface Schema {
+  tables: Record<string, Table>
+}
+
+export interface MigrationDetail extends Migration {
+  raw_content: string
+  schema: Schema
+  warnings: Warning[]
+}
+
+export interface Warning {
+  rule: string
+  severity: 'error' | 'warning' | 'info'
+  table: string
+  column: string | null
+  message: string
+}
+
+export interface DiffChange {
+  type: 'added_table' | 'removed_table' | 'added_column' | 'removed_column' | 'added_index' | 'removed_index'
+  table: string
+  detail: string
+}
+
+export interface Diff {
+  from_version: string
+  to_version: string
+  changes: DiffChange[]
+}
