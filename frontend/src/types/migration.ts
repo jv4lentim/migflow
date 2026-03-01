@@ -42,6 +42,23 @@ export interface Warning {
   message: string
 }
 
+export interface ColumnWithDiff extends Column {
+  diffStatus?: 'added' | 'removed'
+}
+
+export interface IndexWithDiff extends Index {
+  diffStatus?: 'added' | 'removed'
+}
+
+export interface DiffInfo {
+  addedTables: Set<string>
+  removedTables: Set<string>
+  addedColumns: Map<string, string[]>
+  removedColumns: Map<string, string[]>
+  addedIndexColumns: Map<string, string[]>
+  removedIndexColumns: Map<string, string[]>
+}
+
 export interface DiffChange {
   type: 'added_table' | 'removed_table' | 'added_column' | 'removed_column' | 'added_index' | 'removed_index'
   table: string

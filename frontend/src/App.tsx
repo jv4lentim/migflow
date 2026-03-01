@@ -4,6 +4,7 @@ import { Timeline } from './components/Timeline'
 import { SchemaCanvas } from './components/SchemaCanvas'
 import { DetailPanel } from './components/DetailPanel'
 import { CompareBar } from './components/CompareBar'
+import { ResizablePanel } from './components/ResizablePanel'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -20,18 +21,34 @@ function Layout() {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="w-[280px] shrink-0 border-r border-[#30363D] overflow-y-auto">
-          <Timeline />
-        </aside>
+        <ResizablePanel
+          initialWidth={280}
+          minWidth={200}
+          maxWidth={600}
+          side="left"
+          className="border-r border-[#30363D] overflow-hidden"
+        >
+          <div className="h-full overflow-y-auto">
+            <Timeline />
+          </div>
+        </ResizablePanel>
 
         <main className="flex-1 min-w-0 relative">
           <SchemaCanvas />
         </main>
 
         {selectedVersion && (
-          <aside className="w-[320px] shrink-0 border-l border-[#30363D] overflow-y-auto">
-            <DetailPanel />
-          </aside>
+          <ResizablePanel
+            initialWidth={320}
+            minWidth={200}
+            maxWidth={600}
+            side="right"
+            className="border-l border-[#30363D] overflow-hidden"
+          >
+            <div className="h-full flex flex-col">
+              <DetailPanel />
+            </div>
+          </ResizablePanel>
         )}
       </div>
 
