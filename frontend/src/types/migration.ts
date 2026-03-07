@@ -28,9 +28,16 @@ export interface Schema {
   tables: Record<string, Table>
 }
 
+export interface MigrationDiff {
+  added_tables: string[]
+  removed_tables: string[]
+  modified_tables: Record<string, { added_columns: string[]; removed_columns: string[] }>
+}
+
 export interface MigrationDetail extends Migration {
   raw_content: string
-  schema: Schema
+  schema_after: Schema
+  diff: MigrationDiff
   warnings: Warning[]
 }
 

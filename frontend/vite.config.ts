@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
-    outDir: path.resolve(__dirname, '../app/assets/migrail'),
+    outDir: path.resolve(__dirname, '../app/assets/migflow'),
     emptyOutDir: true,
     cssCodeSplit: false,
     rollupOptions: {

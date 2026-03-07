@@ -2,7 +2,7 @@ import type { Diff, Migration, MigrationDetail, Warning } from '../types/migrati
 
 function getApiBase(): string {
   const root = document.getElementById('schema-trail-root')
-  return root?.dataset.apiBase ?? '/migrail/api'
+  return root?.dataset.apiBase ?? '/migflow/api'
 }
 
 async function get<T>(path: string): Promise<T> {

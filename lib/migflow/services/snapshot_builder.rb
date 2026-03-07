@@ -1,0 +1,173 @@
+# frozen_string_literal: true
+
+module Migflow
+  module Services
+    class SnapshotBuilder
+      def self.call(migrations:, up_to_version:)
+        new(migrations: migrations, up_to_version: up_to_version).build
+      end
+
+      def initialize(migrations:, up_to_version:)
+        @migrations    = migrations.sort_by { |m| m[:version] }
+        @up_to_version = up_to_version
+      end
+
+      def build
+        before = { tables: {} }
+        after  = { tables: {} }
+
+        @migrations.each do |migration|
+          break if migration[:version] > @up_to_version
+          before = deep_copy(after)
+          after  = apply_migration(after, migration[:raw_content])
+        end
+
+        { schema_after: after, diff: calculate_diff(before, after) }
+      end
+
+      private
+
+      def deep_copy(state)
+        Marshal.load(Marshal.dump(state))
+      end
+
+      def apply_migration(state, content)
+        s = deep_copy(state)
+        apply_create_tables(s, content)
+        apply_drop_tables(s, content)
+        apply_add_columns(s, content)
+        apply_remove_columns(s, content)
+        apply_add_references(s, content)
+        apply_rename_columns(s, content)
+        apply_rename_tables(s, content)
+        apply_change_columns(s, content)
+        apply_add_indexes(s, content)
+        s
+      end
+
+      def apply_create_tables(state, content)
+        content.scan(/create_table\s+[:"'](\w+)[:"']?[^\n]*\n(.*?)\n\s*end\b/m) do |table, block|
+          state[:tables][table] = { columns: parse_block_columns(block), indexes: [] }
+        end
+      end
+
+      def apply_drop_tables(state, content)
+        content.scan(/drop_table\s+[:"'](\w+)/) { |table,| state[:tables].delete(table) }
+      end
+
+      def apply_add_columns(state, content)
+        content.scan(/add_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)[:"']?,\s*[:"'](\w+)([^\n]*)/) do |table, col, type, opts|
+          ensure_table(state, table)
+          state[:tables][table][:columns] << build_column(col, type, opts)
+        end
+      end
+
+      def apply_remove_columns(state, content)
+        content.scan(/remove_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/) do |table, col|
+          next unless state[:tables][table]
+          state[:tables][table][:columns].reject! { |c| c[:name] == col }
+        end
+      end
+
+      def apply_add_references(state, content)
+        content.scan(/add_reference\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)[:"']?([^\n]*)/) do |table, ref, opts|
+          ensure_table(state, table)
+          state[:tables][table][:columns] << { name: "#{ref}_id", type: "bigint", null: true, default: nil }
+          next unless opts =~ /polymorphic:\s*true/
+          state[:tables][table][:columns] << { name: "#{ref}_type", type: "string", null: true, default: nil }
+        end
+      end
+
+      def apply_rename_columns(state, content)
+        content.scan(/rename_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)[:"']?,\s*[:"'](\w+)/) do |table, from, to|
+          next unless state[:tables][table]
+          col = state[:tables][table][:columns].find { |c| c[:name] == from }
+          col[:name] = to if col
+        end
+      end
+
+      def apply_rename_tables(state, content)
+        content.scan(/rename_table\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/) do |from, to|
+          next unless state[:tables][from]
+          state[:tables][to] = state[:tables].delete(from)
+        end
+      end
+
+      def apply_change_columns(state, content)
+        content.scan(/change_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)[:"']?,\s*[:"'](\w+)/) do |table, col, type|
+          next unless state[:tables][table]
+          existing = state[:tables][table][:columns].find { |c| c[:name] == col }
+          existing[:type] = type if existing
+        end
+      end
+
+      def apply_add_indexes(state, content)
+        content.scan(/add_index\s+[:"'](\w+)[:"']?,\s*(\[.*?\]|[:"']\w+[:"']?)([^\n]*)/) do |table, cols_raw, opts|
+          next unless state[:tables][table]
+          state[:tables][table][:indexes] << build_index(cols_raw, opts)
+        end
+      end
+
+      def ensure_table(state, table)
+        state[:tables][table] ||= { columns: [], indexes: [] }
+      end
+
+      def parse_block_columns(block)
+        columns = []
+        block.scan(/t\.(\w+)\s+[:"'](\w+)[:"']?([^\n]*)/) do |type, name, opts|
+          next if %w[index timestamps].include?(type)
+          columns << build_column(name, type, opts)
+        end
+        if block =~ /t\.timestamps/
+          columns << { name: "created_at", type: "datetime", null: false, default: nil }
+          columns << { name: "updated_at", type: "datetime", null: false, default: nil }
+        end
+        columns
+      end
+
+      def build_column(name, type, opts = "")
+        null_match    = /null:\s*(true|false)/.match(opts)
+        default_match = /default:\s*([^,\n]+)/.match(opts)
+        limit_match   = /limit:\s*(\d+)/.match(opts)
+        col = {
+          name:    name,
+          type:    type,
+          null:    null_match ? null_match[1] == "true" : true,
+          default: default_match ? default_match[1].strip : nil
+        }
+        col[:limit] = limit_match[1].to_i if limit_match
+        col
+      end
+
+      def build_index(cols_raw, opts)
+        name_match = /name:\s*"([^"]+)"/.match(opts)
+        unique     = /unique:\s*true/.match?(opts)
+        cols = if cols_raw.start_with?("[")
+                 cols_raw.scan(/[:"'](\w+)[:"']?/).flatten
+               else
+                 [cols_raw.gsub(/['":,\s]/, "")]
+               end
+        { name: name_match&.[](1), columns: cols, unique: unique }
+      end
+
+      def calculate_diff(before, after)
+        {
+          added_tables:    after[:tables].keys - before[:tables].keys,
+          removed_tables:  before[:tables].keys - after[:tables].keys,
+          modified_tables: modified_tables_diff(before, after)
+        }
+      end
+
+      def modified_tables_diff(before, after)
+        common = before[:tables].keys & after[:tables].keys
+        common.each_with_object({}) do |table, result|
+          before_cols = before[:tables][table][:columns].map { |c| c[:name] }
+          after_cols  = after[:tables][table][:columns].map { |c| c[:name] }
+          added   = after_cols - before_cols
+          removed = before_cols - after_cols
+          result[table] = { added_columns: added, removed_columns: removed } if added.any? || removed.any?
+        end
+      end
+    end
+  end
+end

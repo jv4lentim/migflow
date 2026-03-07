@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-Migrail::Engine.routes.draw do
+Migflow::Engine.routes.draw do
   root to: "application#index"
 
   namespace :api do

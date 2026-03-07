@@ -81,7 +81,7 @@ export function Timeline() {
     queryFn: client.getMigrations,
   })
 
-  const { selectedVersion, setSelectedVersion } = useSchemaStore()
+  const { selectedVersion, selectMigration } = useSchemaStore()
 
   if (isLoading) {
     return (
@@ -111,7 +111,7 @@ export function Timeline() {
           key={migration.version}
           migration={migration}
           isSelected={selectedVersion === migration.version}
-          onSelect={setSelectedVersion}
+          onSelect={selectMigration}
         />
       ))}
     </div>

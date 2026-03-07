@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ReactFlow,
   Background,
@@ -14,10 +14,10 @@ import { useQuery } from '@tanstack/react-query'
 import { client } from '../api/client'
 import { useSchemaStore } from '../store/useSchemaStore'
 import { TableNode, type TableNodeData } from './TableNode'
-import { NODE_WIDTH, nodeHeight } from '../constants/layout'
+import { NODE_WIDTH, nodeHeight, HEADER_HEIGHT } from '../constants/layout'
 import { RelationshipEdge } from './RelationshipEdge'
 import type { Table, Warning, ColumnWithDiff, IndexWithDiff, DiffInfo } from '../types/migration'
-import { parseMigrationChanges, emptyDiffInfo } from '../utils/parseMigrationChanges'
+import { diffInfoFromApi, emptyDiffInfo } from '../utils/parseMigrationChanges'
 
 const NODE_TYPES = { tableNode:     TableNode }
 const EDGE_TYPES = { relationship:  RelationshipEdge }
@@ -122,6 +122,8 @@ function buildNodes(
   diffInfo:       DiffInfo,
   fkColumnsMap:   Map<string, string[]>,
   selectedEdgeId: string | null,
+  selectedTableId: string | null,
+  collapsedTables: Set<string>,
   edges:          Edge[],
 ): Node[] {
   const selectedNodeIds = new Set<string>()
@@ -184,8 +186,9 @@ function buildNodes(
 
     const warningCount = warnings.filter((w) => w.table === name).length
     const tableStatus  = isNewTable ? 'added' : isRemovedTable ? 'removed' : undefined
+    const isCollapsed   = collapsedTables.has(name)
 
-    const height = nodeHeight(allColumns.length)
+    const height = isCollapsed ? HEADER_HEIGHT : nodeHeight(allColumns.length)
     const x      = colInRow * (NODE_WIDTH + H_GAP)
     const y      = currentY
 
@@ -202,7 +205,7 @@ function buildNodes(
       id:       name,
       type:     'tableNode',
       position: { x, y },
-      style:    { transition: 'transform 300ms ease' },
+      style:    { transition: 'transform 250ms ease' },
       data: {
         label:        name,
         columns:      allColumns,
@@ -212,6 +215,8 @@ function buildNodes(
         fkColumns:    fkColNames,
         fkEdgeMap,
         isEdgeSelected: selectedNodeIds.has(name),
+        isSelected:     selectedTableId === name,
+        isCollapsed,
       } satisfies TableNodeData,
     }
   })
@@ -228,12 +233,19 @@ interface FitViewManagerProps {
 
 function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: FitViewManagerProps) {
   const { fitView } = useReactFlow()
+  const selectedVersion = useSchemaStore((state) => state.selectedVersion)
+  const pendingFitView = useRef(false)
 
-  const nodesKey = computedNodes.map((n) => n.id).join(',')
+  useEffect(() => {
+    pendingFitView.current = true
+  }, [selectedVersion])
 
-  useMemo(() => {
+  useEffect(() => {
     setNodes(computedNodes)
     setEdges(computedEdges)
+
+    if (!pendingFitView.current || computedNodes.length === 0) return
+    pendingFitView.current = false
 
     const changedIds = computedNodes
       .filter((n) => {
@@ -252,7 +264,7 @@ function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: Fi
       )
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodesKey])
+  }, [computedNodes, computedEdges])
 
   return null
 }
@@ -328,7 +340,7 @@ function EmptyState() {
 // ─── Public component ────────────────────────────────────────────────────────
 
 export function SchemaCanvas() {
-  const { selectedVersion, selectedEdgeId } = useSchemaStore()
+  const { selectedVersion, selectedEdgeId, selectedTableId, collapsedTables } = useSchemaStore()
 
   const { data: detail } = useQuery({
     queryKey: ['migration', selectedVersion],
@@ -342,29 +354,40 @@ export function SchemaCanvas() {
   })
 
   const diffInfo = useMemo(() => {
-    if (!detail?.raw_content) return emptyDiffInfo()
-    return parseMigrationChanges(detail.raw_content)
-  }, [detail?.raw_content])
+    if (!detail?.diff) return emptyDiffInfo()
+    return diffInfoFromApi(detail.diff)
+  }, [detail?.diff])
 
   const { computedNodes, computedEdges } = useMemo(() => {
-    if (!detail?.schema?.tables) return { computedNodes: [], computedEdges: [] }
+    if (!detail?.schema_after?.tables) return { computedNodes: [], computedEdges: [] }
 
-    const { rawEdges, fkColumnsMap } = buildRawEdges(detail.schema.tables, diffInfo)
-    const edges = applyEdgeCurvature(rawEdges).map((edge) => ({
+    const { rawEdges, fkColumnsMap } = buildRawEdges(detail.schema_after.tables, diffInfo)
+    const collapsedSet = collapsedTables
+    const edgesWithHandles = rawEdges.map((edge) => {
+      const sourceCollapsed = collapsedSet.has(edge.source)
+      return {
+        ...edge,
+        sourceHandle: sourceCollapsed ? 'table-source' : edge.sourceHandle,
+      }
+    })
+    const edgesWithCurvature = applyEdgeCurvature(edgesWithHandles)
+    const edges = edgesWithCurvature.map((edge) => ({
       ...edge,
       animated: selectedEdgeId === edge.id,
     }))
     const nodes = buildNodes(
-      detail.schema.tables,
+      detail.schema_after.tables,
       warnings ?? [],
       diffInfo,
       fkColumnsMap,
       selectedEdgeId,
+      selectedTableId,
+      collapsedTables,
       edges,
     )
 
     return { computedNodes: nodes, computedEdges: edges }
-  }, [detail, warnings, diffInfo, selectedEdgeId])
+  }, [detail, warnings, diffInfo, selectedEdgeId, selectedTableId, collapsedTables])
 
   if (!selectedVersion) return <EmptyState />
 

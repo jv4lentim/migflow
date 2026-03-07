@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    migrail (0.1.0)
+    migflow (0.1.0)
       rails (>= 7.0)
 
 GEM
@@ -262,7 +262,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  migrail!
+  migflow!
   minitest (~> 5.16)
   minitest-reporters
   rake (~> 13.0)

@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in migrail.gemspec
+# Specify your gem's dependencies in migflow.gemspec
 gemspec
 
 gem "rake", "~> 13.0"

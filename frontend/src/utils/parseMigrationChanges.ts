@@ -1,4 +1,4 @@
-import type { DiffInfo } from '../types/migration'
+import type { DiffInfo, MigrationDiff } from '../types/migration'
 
 function matchAll(content: string, pattern: RegExp): RegExpExecArray[] {
   const results: RegExpExecArray[] = []
@@ -25,6 +25,25 @@ export function emptyDiffInfo(): DiffInfo {
   }
 }
 
+export function diffInfoFromApi(diff: MigrationDiff): DiffInfo {
+  const addedColumns:   Map<string, string[]> = new Map()
+  const removedColumns: Map<string, string[]> = new Map()
+
+  for (const [table, changes] of Object.entries(diff.modified_tables)) {
+    if (changes.added_columns.length)   addedColumns.set(table, changes.added_columns)
+    if (changes.removed_columns.length) removedColumns.set(table, changes.removed_columns)
+  }
+
+  return {
+    addedTables:         new Set(diff.added_tables),
+    removedTables:       new Set(diff.removed_tables),
+    addedColumns,
+    removedColumns,
+    addedIndexColumns:   new Map(),
+    removedIndexColumns: new Map(),
+  }
+}
+
 export function parseMigrationChanges(rawContent: string): DiffInfo {
   const info = emptyDiffInfo()
 
@@ -36,11 +55,11 @@ export function parseMigrationChanges(rawContent: string): DiffInfo {
     info.removedTables.add(m[1])
   }
 
-  for (const m of matchAll(rawContent, /add_column[( ]+[:"'](\w+)[:"']?,\s*[:"'](\w+)/)) {
+  for (const m of matchAll(rawContent, /add_column\s*[(\s][\s:"']*(\w+)[\s:"']*,\s*[:"'](\w+)/)) {
     pushTo(info.addedColumns, m[1], m[2])
   }
 
-  for (const m of matchAll(rawContent, /remove_column[( ]+[:"'](\w+)[:"']?,\s*[:"'](\w+)/)) {
+  for (const m of matchAll(rawContent, /remove_column\s*[(\s][\s:"']*(\w+)[\s:"']*,\s*[:"'](\w+)/)) {
     pushTo(info.removedColumns, m[1], m[2])
   }
 

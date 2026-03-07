@@ -1,0 +1,3 @@
+module Migflow
+  VERSION: String
+end

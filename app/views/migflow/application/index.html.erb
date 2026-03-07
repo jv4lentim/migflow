@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migflow</title>
+    <%= stylesheet_link_tag "migflow/app" %>
+  </head>
+  <body>
+    <div
+      id="schema-trail-root"
+      data-api-base="<%= migflow.root_path %>api"
+    ></div>
+    <%= javascript_include_tag "migflow/app", defer: true %>
+  </body>
+</html>
