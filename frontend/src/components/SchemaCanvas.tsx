@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, useRef } from 'react'
+import { useMemo, useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
 import {
   ReactFlow,
   Background,
@@ -227,7 +227,7 @@ function buildNodes(
 interface FitViewManagerProps {
   computedNodes: Node[]
   computedEdges: Edge[]
-  setNodes: (nodes: Node[]) => void
+  setNodes: Dispatch<SetStateAction<Node[]>>
   setEdges: (edges: Edge[]) => void
 }
 
@@ -241,7 +241,17 @@ function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: Fi
   }, [selectedVersion])
 
   useEffect(() => {
-    setNodes(computedNodes)
+    if (pendingFitView.current) {
+      setNodes(computedNodes)
+    } else {
+      setNodes((prev: Node[]) => {
+        const positionMap = new Map(prev.map((n: Node) => [n.id, n.position]))
+        return computedNodes.map((node) => ({
+          ...node,
+          position: positionMap.get(node.id) ?? node.position,
+        }))
+      })
+    }
     setEdges(computedEdges)
 
     if (!pendingFitView.current || computedNodes.length === 0) return

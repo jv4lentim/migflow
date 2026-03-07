@@ -42,6 +42,7 @@ module Migflow
         apply_rename_tables(s, content)
         apply_change_columns(s, content)
         apply_add_indexes(s, content)
+        apply_change_table_blocks(s, content)
         s
       end
 
@@ -105,6 +106,29 @@ module Migflow
         content.scan(/add_index\s+[:"'](\w+)[:"']?,\s*(\[.*?\]|[:"']\w+[:"']?)([^\n]*)/) do |table, cols_raw, opts|
           next unless state[:tables][table]
           state[:tables][table][:indexes] << build_index(cols_raw, opts)
+        end
+      end
+
+      NON_COLUMN_BLOCK_METHODS = %w[index timestamps remove rename change references belongs_to remove_references remove_timestamps].freeze
+
+      def apply_change_table_blocks(state, content)
+        content.scan(/change_table\s+[:"'](\w+)[:"']?[^\n]*\n(.*?)\n\s*end\b/m) do |table, block|
+          next unless state[:tables][table]
+          add_block_columns_to_table(state[:tables][table], block)
+          remove_block_columns_from_table(state[:tables][table], block)
+        end
+      end
+
+      def add_block_columns_to_table(table_state, block)
+        block.scan(/t\.(\w+)\s+[:"'](\w+)[:"']?([^\n]*)/) do |type, name, opts|
+          next if NON_COLUMN_BLOCK_METHODS.include?(type)
+          table_state[:columns] << build_column(name, type, opts)
+        end
+      end
+
+      def remove_block_columns_from_table(table_state, block)
+        block.scan(/t\.remove\s+[:"'](\w+)/) do |col,|
+          table_state[:columns].reject! { |c| c[:name] == col }
         end
       end
 
