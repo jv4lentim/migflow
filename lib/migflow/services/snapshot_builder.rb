@@ -3,6 +3,8 @@
 module Migflow
   module Services
     class SnapshotBuilder
+      NON_COLUMN_BLOCK_METHODS = %w[index timestamps remove rename change references belongs_to remove_references remove_timestamps].freeze
+
       def self.call(migrations:, up_to_version:)
         new(migrations: migrations, up_to_version: up_to_version).build
       end
@@ -108,8 +110,6 @@ module Migflow
           state[:tables][table][:indexes] << build_index(cols_raw, opts)
         end
       end
-
-      NON_COLUMN_BLOCK_METHODS = %w[index timestamps remove rename change references belongs_to remove_references remove_timestamps].freeze
 
       def apply_change_table_blocks(state, content)
         content.scan(/change_table\s+[:"'](\w+)[:"']?[^\n]*\n(.*?)\n\s*end\b/m) do |table, block|
