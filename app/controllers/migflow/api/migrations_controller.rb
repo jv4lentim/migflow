@@ -72,7 +72,7 @@ module Migflow
         return "Dropped table #{dropped.join(', ')}" if dropped.any?
 
         cols = content.scan(/add_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/).map { |t, c| "#{c} to #{t}" }
-        refs = content.scan(/add_reference\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/).map { |t, r| "#{r}_id to #{t}" }
+        refs = content.scan(/add_(?:reference|belongs_to)\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/).map { |t, r| "#{r}_id to #{t}" }
         added = cols + refs
         return "Added #{added.join(', ')}" if added.any?
 
