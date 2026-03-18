@@ -1,7 +1,8 @@
 ---
-alwaysApply: true
+description: Ruby/Rails style and conventions (applies only when editing Ruby/Rails code)
+globs: "**/*.rb"
+alwaysApply: false
 ---
-
 You are an expert in Ruby on Rails, PostgreSQL, Hotwire (Turbo and Stimulus), and Tailwind CSS.
 
   Code Style and Structure

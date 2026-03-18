@@ -16,7 +16,7 @@ import { useSchemaStore } from '../store/useSchemaStore'
 import { TableNode, type TableNodeData } from './TableNode'
 import { NODE_WIDTH, nodeHeight, HEADER_HEIGHT } from '../constants/layout'
 import { RelationshipEdge } from './RelationshipEdge'
-import type { Table, Warning, ColumnWithDiff, IndexWithDiff, DiffInfo } from '../types/migration'
+import type { Table, ColumnWithDiff, IndexWithDiff, DiffInfo } from '../types/migration'
 import { diffInfoFromApi, emptyDiffInfo } from '../utils/parseMigrationChanges'
 
 const NODE_TYPES = { tableNode:     TableNode }
@@ -78,11 +78,10 @@ function buildRawEdges(
     }
   }
 
-  const edgesWithCurvature = applyEdgeCurvature(rawEdges)
-  return { rawEdges: edgesWithCurvature, fkColumnsMap }
+  return { rawEdges, fkColumnsMap }
 }
 
-function calcularOffset(index: number, count: number): number {
+function calculateOffset(index: number, count: number): number {
   if (count === 1) return 20
   const spread = 20
   return (index - (count - 1) / 2) * spread + 20
@@ -100,7 +99,7 @@ function applyEdgeCurvature(edges: Edge[]): Edge[] {
   edgePairs.forEach((group) => {
     const count = group.length
     group.forEach((edge, index) => {
-      const offset = calcularOffset(index, count)
+      const offset = calculateOffset(index, count)
       result.push({
         ...edge,
         type: 'relationship',
@@ -118,7 +117,7 @@ function applyEdgeCurvature(edges: Edge[]): Edge[] {
 
 function buildNodes(
   tables:         Record<string, Table>,
-  warnings:       Warning[],
+  warningCountByTable: Map<string, number>,
   diffInfo:       DiffInfo,
   fkColumnsMap:   Map<string, string[]>,
   selectedEdgeId: string | null,
@@ -184,7 +183,7 @@ function buildNodes(
       if (targetTable) fkEdgeMap[colName] = `${name}-${colName}-${targetTable}`
     }
 
-    const warningCount = warnings.filter((w) => w.table === name).length
+    const warningCount = warningCountByTable.get(name) ?? 0
     const tableStatus  = isNewTable ? 'added' : isRemovedTable ? 'removed' : undefined
     const isCollapsed   = collapsedTables.has(name)
 
@@ -273,8 +272,7 @@ function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: Fi
           : { duration: 500, padding: 0.1 },
       )
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [computedNodes, computedEdges])
+  }, [computedNodes, computedEdges, fitView, setEdges, setNodes])
 
   return null
 }
@@ -363,10 +361,19 @@ export function SchemaCanvas() {
     queryFn:  client.getWarnings,
   })
 
+  const diff = detail?.diff
   const diffInfo = useMemo(() => {
-    if (!detail?.diff) return emptyDiffInfo()
-    return diffInfoFromApi(detail.diff)
-  }, [detail?.diff])
+    if (!diff) return emptyDiffInfo()
+    return diffInfoFromApi(diff)
+  }, [diff])
+
+  const warningCountByTable = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const w of warnings ?? []) {
+      map.set(w.table, (map.get(w.table) ?? 0) + 1)
+    }
+    return map
+  }, [warnings])
 
   const { computedNodes, computedEdges } = useMemo(() => {
     if (!detail?.schema_after?.tables) return { computedNodes: [], computedEdges: [] }
@@ -380,14 +387,13 @@ export function SchemaCanvas() {
         sourceHandle: sourceCollapsed ? 'table-source' : edge.sourceHandle,
       }
     })
-    const edgesWithCurvature = applyEdgeCurvature(edgesWithHandles)
-    const edges = edgesWithCurvature.map((edge) => ({
+    const edges = applyEdgeCurvature(edgesWithHandles).map((edge) => ({
       ...edge,
       animated: selectedEdgeId === edge.id,
     }))
     const nodes = buildNodes(
       detail.schema_after.tables,
-      warnings ?? [],
+      warningCountByTable,
       diffInfo,
       fkColumnsMap,
       selectedEdgeId,
@@ -397,7 +403,7 @@ export function SchemaCanvas() {
     )
 
     return { computedNodes: nodes, computedEdges: edges }
-  }, [detail, warnings, diffInfo, selectedEdgeId, selectedTableId, collapsedTables])
+  }, [detail, diffInfo, selectedEdgeId, selectedTableId, collapsedTables, warningCountByTable])
 
   if (!selectedVersion) return <EmptyState />
 

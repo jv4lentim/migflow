@@ -8,6 +8,7 @@ class TestMigflow < Minitest::Test
   end
 
   def test_it_does_something_useful
-    assert false
+    assert defined?(Migflow::Parsers::MigrationParser)
+    assert defined?(Migflow::Services::SnapshotBuilder)
   end
 end

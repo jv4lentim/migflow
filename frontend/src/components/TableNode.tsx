@@ -139,14 +139,6 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
         style={{ top: targetHandleTop, position: 'absolute' }}
       />
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="table-target"
-        className="!w-2 !h-2 !bg-[#30363D] !border-[#484F58]"
-        style={{ top: targetHandleTop, position: 'absolute' }}
-      />
-
       {isCollapsed ? (
         <Handle
           type="source"
