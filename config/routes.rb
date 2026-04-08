@@ -5,7 +5,6 @@ Migflow::Engine.routes.draw do
 
   namespace :api do
     resources :migrations, only: [:index, :show]
-    get "diff",     to: "diff#show"
-    get "warnings", to: "warnings#index"
+    get "diff", to: "diff#show"
   end
 end

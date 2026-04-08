@@ -11,7 +11,7 @@ const queryClient = new QueryClient({
 })
 
 function Layout() {
-  const { selectedVersion, isCompareMode } = useSchemaStore()
+  const { selectedVersion } = useSchemaStore()
 
   return (
     <div className="flex flex-col h-screen bg-[#0D1117] text-[#E6EDF3] overflow-hidden">
@@ -33,8 +33,11 @@ function Layout() {
           </div>
         </ResizablePanel>
 
-        <main className="flex-1 min-w-0 relative">
-          <SchemaCanvas />
+        <main className="flex-1 min-w-0 relative flex flex-col min-h-0">
+          <CompareBar />
+          <div className="flex-1 min-h-0 relative">
+            <SchemaCanvas />
+          </div>
         </main>
 
         {selectedVersion && (
@@ -52,11 +55,6 @@ function Layout() {
         )}
       </div>
 
-      {isCompareMode && (
-        <footer className="h-[60px] shrink-0 border-t border-[#30363D]">
-          <CompareBar />
-        </footer>
-      )}
     </div>
   )
 }

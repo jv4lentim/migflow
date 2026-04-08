@@ -5,6 +5,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react'
 import { useSchemaStore } from '../store/useSchemaStore'
+import { palette } from '../theme/colors'
 
 export interface RelationshipEdgeData {
   diffAdded:   boolean
@@ -35,10 +36,10 @@ export function RelationshipEdge({
   const isFlow         = isEdgeSelected || isTableFlow
   const showLabel      = (isHovered || isFlow) && d.fkColumn
 
-  const strokeColor = d.diffAdded    ? '#3FB950'
-                    : d.diffRemoved  ? '#F85149'
-                    : (isHovered || isFlow) ? '#58A6FF'
-                    : '#444C56'
+  const strokeColor = d.diffAdded    ? palette.diffAdded
+                    : d.diffRemoved  ? palette.diffRemoved
+                    : (isHovered || isFlow) ? palette.accent
+                    : palette.edgeDefault
 
   const strokeWidth = isEdgeSelected ? 2.5 : (isHovered || isTableFlow) ? 2 : 1.5
   const pathOpts    = d.pathOptions ?? { borderRadius: 12, offset: 20 }

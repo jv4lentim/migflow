@@ -16,7 +16,7 @@ module Migflow
 
         result   = Services::SnapshotBuilder.call(migrations: migrations, up_to_version: params[:id])
         snapshot = snapshot_model_from(result[:schema_after], migration[:version])
-        warnings = Analyzers::AuditAnalyzer.call(snapshot: snapshot, raw_migrations: [migration])
+        warnings = Services::ScopedMigrationWarnings.call(snapshot: snapshot, migration: migration)
 
         render_json(migration: serialize_detail(migration, result[:schema_after], result[:diff], warnings))
       end
@@ -37,7 +37,10 @@ module Migflow
           version:  migration[:version],
           name:     migration[:name],
           filename: migration[:filename],
-          summary:  infer_summary(migration)
+          summary:  Services::MigrationSummaryBuilder.call(
+            raw_content: migration[:raw_content],
+            version: migration[:version]
+          )
         }
       end
 
@@ -62,22 +65,6 @@ module Migflow
         }
       end
 
-      def infer_summary(migration)
-        content = migration[:raw_content]
-
-        tables = content.scan(/create_table\s+[:"'](\w+)/).flatten
-        return "Created table #{tables.join(', ')}" if tables.any?
-
-        dropped = content.scan(/drop_table\s+[:"'](\w+)/).flatten
-        return "Dropped table #{dropped.join(', ')}" if dropped.any?
-
-        cols = content.scan(/add_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/).map { |t, c| "#{c} to #{t}" }
-        refs = content.scan(/add_(?:reference|belongs_to)\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)/).map { |t, r| "#{r}_id to #{t}" }
-        added = cols + refs
-        return "Added #{added.join(', ')}" if added.any?
-
-        "Migration #{migration[:version]}"
-      end
     end
   end
 end

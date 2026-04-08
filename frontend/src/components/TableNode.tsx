@@ -10,6 +10,7 @@ import {
   NODE_PADDING_TOP,
   NODE_WIDTH,
 } from '../constants/layout'
+import { palette } from '../theme/colors'
 
 export { HEADER_HEIGHT, COLUMN_HEIGHT, NODE_WIDTH } from '../constants/layout'
 
@@ -61,45 +62,50 @@ function ColumnRow({ column, indexes, fkEdgeId, columnIndex }: ColumnRowProps) {
   const indexed  = !!idxEntry
   const idxStatus = idxEntry?.diffStatus
 
-  const bgClass =
-    status === 'added'   ? 'bg-[#0d2012]' :
-    status === 'removed' ? 'bg-[#2d1212]' :
-    'hover:bg-[#0D1117]'
+  const rowBg =
+    status === 'added'   ? palette.rowAddedBg :
+    status === 'removed' ? palette.rowRemovedBg :
+    undefined
 
-  const nameClass =
-    status === 'removed' ? 'line-through text-[#F85149]' :
-    status === 'added'   ? 'text-[#3FB950]' :
-    isFk                 ? 'text-[#58A6FF]' :
-    'text-[#E6EDF3]'
+  const nameColor =
+    status === 'removed' ? palette.diffRemoved :
+    status === 'added'   ? palette.diffAdded :
+    isFk                 ? palette.accent :
+    '#E6EDF3'
 
-  const typeClass    = status === 'removed' ? 'text-[#F85149]' : 'text-[#7D8590]'
-  const lightningCls = idxStatus === 'added'   ? 'text-[#3FB950]' :
-                       idxStatus === 'removed' ? 'text-[#F85149]' :
-                       'text-[#D29922]'
+  const typeColor    = status === 'removed' ? palette.diffRemoved : '#7D8590'
+  const lightningColor = idxStatus === 'added'   ? palette.diffAdded :
+                       idxStatus === 'removed' ? palette.diffRemoved :
+                       palette.warning
 
   return (
     <div
-      className={`flex items-center gap-1.5 px-3 text-xs transition-colors cursor-default box-border ${columnIndex > 0 ? 'border-t border-[#30363D]' : ''} ${bgClass}`}
-      style={{ height: COLUMN_HEIGHT }}
+      className={`flex items-center gap-1.5 px-3 text-xs transition-colors cursor-default box-border ${columnIndex > 0 ? 'border-t border-[#30363D]' : ''} ${!rowBg ? 'hover:bg-[#0D1117]' : ''}`}
+      style={{ height: COLUMN_HEIGHT, backgroundColor: rowBg }}
       onMouseEnter={isFk ? () => setHighlightedEdgeId(fkEdgeId) : undefined}
       onMouseLeave={isFk ? () => setHighlightedEdgeId(null) : undefined}
     >
       <span className="w-3 text-center shrink-0 font-mono text-[#7D8590]">
-        {status === 'added'   && <span className="text-[#3FB950]">+</span>}
-        {status === 'removed' && <span className="text-[#F85149]">−</span>}
+        {status === 'added'   && <span style={{ color: palette.diffAdded }}>+</span>}
+        {status === 'removed' && <span style={{ color: palette.diffRemoved }}>−</span>}
         {!status && typeIcon(column.type)}
       </span>
 
-      <span className={`flex-1 font-mono truncate ${nameClass}`}>{column.name}</span>
+      <span
+        className={`flex-1 font-mono truncate ${status === 'removed' ? 'line-through' : ''}`}
+        style={{ color: nameColor }}
+      >
+        {column.name}
+      </span>
 
       {column.type && (
-        <span className={`font-mono shrink-0 text-[10px] ${typeClass}`}>
+        <span className="font-mono shrink-0 text-[10px]" style={{ color: typeColor }}>
           {column.type}{column.limit ? `(${column.limit})` : ''}
         </span>
       )}
 
-      {indexed  && <span className={`shrink-0 ${lightningCls}`} title="indexed">⚡</span>}
-      {isFk && !status && <span className="shrink-0 text-[#58A6FF]" title="foreign key">⇢</span>}
+      {indexed  && <span className="shrink-0" style={{ color: lightningColor }} title="indexed">⚡</span>}
+      {isFk && !status && <span className="shrink-0" style={{ color: palette.accent }} title="foreign key">⇢</span>}
     </div>
   )
 }
@@ -110,9 +116,9 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
 
   const isNew     = tableStatus === 'added'
   const isRemoved = tableStatus === 'removed'
-  const borderColor = isSelected || isEdgeSelected ? '#58A6FF'
-                    : isNew         ? '#3FB950'
-                    : isRemoved     ? '#F85149'
+  const borderColor = isSelected || isEdgeSelected ? palette.accent
+                    : isNew         ? palette.diffAdded
+                    : isRemoved     ? palette.diffRemoved
                     : '#30363D'
   const borderWidth = isSelected ? 2 : 1
   const boxShadow   = isSelected ? '0 0 0 3px rgba(88, 166, 255, 0.2)' : undefined
@@ -148,7 +154,7 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
             top:        targetHandleTop,
             right:      -5,
             position:   'absolute',
-            background: '#58A6FF',
+            background: palette.accent,
             width:      8,
             height:     8,
             border:     'none',
@@ -174,7 +180,7 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
                 top:        handleTop,
                 right:      -5,
                 position:   'absolute',
-                background: '#58A6FF',
+                background: palette.accent,
                 width:      8,
                 height:     8,
                 border:     'none',
@@ -207,10 +213,27 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 15l-6-6-6 6" /></svg>
               )}
             </button>
-            {isNew     && <span className="bg-[#3FB950] text-[#0D1117] text-[9px] font-bold px-1.5 py-0.5 rounded">NEW</span>}
-            {isRemoved && <span className="bg-[#F85149] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">REMOVED</span>}
+            {isNew     && (
+              <span
+                className="text-[#0D1117] text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: palette.diffAdded }}
+              >
+                NEW
+              </span>
+            )}
+            {isRemoved && (
+              <span
+                className="text-white text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: palette.diffRemoved }}
+              >
+                REMOVED
+              </span>
+            )}
             {warningCount > 0 && (
-              <span className="bg-[#F85149] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span
+                className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: palette.diffRemoved }}
+              >
                 {warningCount}
               </span>
             )}

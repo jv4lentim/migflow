@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { client } from '../api/client'
 import { useSchemaStore } from '../store/useSchemaStore'
-import type { Warning } from '../types/migration'
+import type { MigrationDetail, Warning } from '../types/migration'
 
 const SEVERITY_COLORS = {
   error:   { bg: '#2D1B1B', border: '#F85149', badge: 'bg-[#F85149]', text: 'text-[#F85149]' },
@@ -90,7 +90,7 @@ function highlightCode(raw: string): string {
 function CodeTab({ rawContent }: { rawContent: string }) {
   return (
     <pre
-      className="text-xs font-mono text-[#E6EDF3] p-4 overflow-auto h-full leading-5 whitespace-pre-wrap"
+      className="text-xs font-mono text-[#E6EDF3] p-3 overflow-auto h-full min-h-0 leading-5 whitespace-pre-wrap"
       dangerouslySetInnerHTML={{ __html: highlightCode(rawContent) }}
     />
   )
@@ -105,7 +105,7 @@ function WarningsTab({ warnings }: { warnings: Warning[] }) {
 
   if (!warnings.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-[#7D8590] text-sm">
+      <div className="flex flex-col items-center justify-center h-full min-h-[120px] text-[#7D8590] text-sm px-4">
         <span className="text-2xl mb-2">✓</span>
         No warnings found
       </div>
@@ -113,7 +113,7 @@ function WarningsTab({ warnings }: { warnings: Warning[] }) {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3 space-y-4 overflow-auto h-full min-h-0">
       {(['error', 'warning', 'info'] as const).map((severity) =>
         grouped[severity].length > 0 ? (
           <div key={severity}>
@@ -130,41 +130,39 @@ function WarningsTab({ warnings }: { warnings: Warning[] }) {
   )
 }
 
-export function DetailPanel() {
-  const [activeTab, setActiveTab] = useState<Tab>('code')
-  const { selectedVersion } = useSchemaStore()
-
-  const { data: detail, isLoading } = useQuery({
-    queryKey: ['migration', selectedVersion],
-    queryFn:  () => client.getMigrationDetail(selectedVersion!),
-    enabled:  !!selectedVersion,
-  })
-
-  if (isLoading) {
-    return (
-      <div className="animate-pulse p-4 space-y-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-3 bg-[#30363D] rounded w-full" />
-        ))}
-      </div>
-    )
-  }
-
-  if (!detail) return null
-
+function PanelSkeleton() {
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-[#30363D]">
+    <div className="animate-pulse p-3 space-y-3 flex-1">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="h-3 bg-[#30363D] rounded w-full" />
+      ))}
+    </div>
+  )
+}
+
+interface MigrationPaneProps {
+  detail:    MigrationDetail
+  roleLabel: string
+  activeTab: Tab
+  onTabChange: (t: Tab) => void
+}
+
+function MigrationPane({ detail, roleLabel, activeTab, onTabChange }: MigrationPaneProps) {
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-3 py-2 border-b border-[#30363D] shrink-0">
+        <p className="text-[10px] font-mono text-[#58A6FF] uppercase tracking-wider">{roleLabel}</p>
         <p className="text-sm font-semibold truncate">{detail.name}</p>
-        <p className="text-xs font-mono text-[#7D8590]">{detail.version}</p>
+        <p className="text-xs font-mono text-[#7D8590] truncate">{detail.version}</p>
       </div>
 
-      <div className="flex border-b border-[#30363D]">
+      <div className="flex border-b border-[#30363D] shrink-0">
         {(['code', 'warnings'] as Tab[]).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
+            type="button"
+            onClick={() => onTabChange(tab)}
+            className={`flex-1 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors ${
               activeTab === tab
                 ? 'text-[#58A6FF] border-b-2 border-[#58A6FF]'
                 : 'text-[#7D8590] hover:text-[#E6EDF3]'
@@ -180,10 +178,89 @@ export function DetailPanel() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {activeTab === 'code'
           ? <CodeTab rawContent={detail.raw_content} />
           : <WarningsTab warnings={detail.warnings} />}
+      </div>
+    </div>
+  )
+}
+
+export function DetailPanel() {
+  const [baseTab, setBaseTab] = useState<Tab>('code')
+  const [targetTab, setTargetTab] = useState<Tab>('code')
+  const { selectedVersion, compareTo } = useSchemaStore()
+
+  const compareSplit =
+    !!selectedVersion
+    && !!compareTo
+    && compareTo !== selectedVersion
+
+  const { data: baseDetail, isPending: loadingBase } = useQuery({
+    queryKey: ['migration', selectedVersion],
+    queryFn:  () => client.getMigrationDetail(selectedVersion!),
+    enabled:  !!selectedVersion,
+  })
+
+  const { data: targetDetail, isPending: loadingTarget } = useQuery({
+    queryKey: ['migration', compareTo],
+    queryFn:  () => client.getMigrationDetail(compareTo!),
+    enabled:  compareSplit,
+  })
+
+  if (!selectedVersion) return null
+
+  if (loadingBase || !baseDetail) {
+    return (
+      <div className="flex flex-col h-full">
+        <PanelSkeleton />
+      </div>
+    )
+  }
+
+  if (!compareSplit) {
+    return (
+      <div className="flex flex-col h-full min-h-0">
+        <MigrationPane
+          detail={baseDetail}
+          roleLabel="Migration"
+          activeTab={baseTab}
+          onTabChange={setBaseTab}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 border-b border-[#30363D]">
+        <MigrationPane
+          detail={baseDetail}
+          roleLabel="Base"
+          activeTab={baseTab}
+          onTabChange={setBaseTab}
+        />
+      </div>
+      <div className="flex-1 flex flex-col min-h-0 min-h-[140px]">
+        {loadingTarget || !targetDetail
+          ? (
+              <div className="flex flex-col h-full min-h-0">
+                <div className="px-3 py-2 border-b border-[#30363D] shrink-0">
+                  <p className="text-[10px] font-mono text-[#58A6FF] uppercase tracking-wider">Target</p>
+                  <p className="text-xs text-[#7D8590] font-mono">Loading…</p>
+                </div>
+                <PanelSkeleton />
+              </div>
+            )
+          : (
+              <MigrationPane
+                detail={targetDetail}
+                roleLabel="Target"
+                activeTab={targetTab}
+                onTabChange={setTargetTab}
+              />
+            )}
       </div>
     </div>
   )

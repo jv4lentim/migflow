@@ -1,4 +1,4 @@
-import type { Diff, Migration, MigrationDetail, Warning } from '../types/migration'
+import type { Diff, Migration, MigrationDetail } from '../types/migration'
 
 function getApiBase(): string {
   const root = document.getElementById('schema-trail-root')
@@ -28,9 +28,5 @@ export const client = {
 
   getDiff(from: string, to: string): Promise<Diff> {
     return get<{ diff: Diff }>(`/diff?from=${from}&to=${to}`).then((r) => r.diff)
-  },
-
-  getWarnings(): Promise<Warning[]> {
-    return get<{ warnings: Warning[] }>('/warnings').then((r) => r.warnings)
   },
 }

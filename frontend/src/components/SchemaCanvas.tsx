@@ -16,17 +16,60 @@ import { useSchemaStore } from '../store/useSchemaStore'
 import { TableNode, type TableNodeData } from './TableNode'
 import { NODE_WIDTH, nodeHeight, HEADER_HEIGHT } from '../constants/layout'
 import { RelationshipEdge } from './RelationshipEdge'
-import type { Table, ColumnWithDiff, IndexWithDiff, DiffInfo } from '../types/migration'
+import type { Table, ColumnWithDiff, IndexWithDiff, DiffInfo, Warning } from '../types/migration'
 import { diffInfoFromApi, emptyDiffInfo } from '../utils/parseMigrationChanges'
+import { schemasToDiffInfo } from '../utils/schemaDiffToDiffInfo'
 
 const NODE_TYPES = { tableNode:     TableNode }
 const EDGE_TYPES = { relationship:  RelationshipEdge }
 
+function warningDedupeKey(warning: Warning): string {
+  return [
+    warning.rule,
+    warning.severity,
+    warning.table,
+    warning.column ?? '',
+    warning.message,
+  ].join('::')
+}
+
+function dedupeWarnings(warnings: Warning[]): Warning[] {
+  const seen = new Set<string>()
+  const unique: Warning[] = []
+
+  for (const warning of warnings) {
+    const key = warningDedupeKey(warning)
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(warning)
+  }
+
+  return unique
+}
+
+function mergeScopedWarnings(
+  baseWarnings:   Warning[] | undefined,
+  targetWarnings: Warning[] | undefined,
+  includeTarget:  boolean,
+): Warning[] {
+  const combined = includeTarget
+    ? [...(baseWarnings ?? []), ...(targetWarnings ?? [])]
+    : (baseWarnings ?? [])
+
+  return dedupeWarnings(combined)
+}
+
+function countWarningsByTable(warnings: Warning[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const warning of warnings) {
+    counts.set(warning.table, (counts.get(warning.table) ?? 0) + 1)
+  }
+  return counts
+}
+
 const H_GAP     = 80
 const V_GAP     = 80
 const GRID_COLS = 4
-
-// ─── Edge building ───────────────────────────────────────────────────────────
 
 interface RawEdgeResult {
   rawEdges:     Edge[]
@@ -112,8 +155,6 @@ function applyEdgeCurvature(edges: Edge[]): Edge[] {
   })
   return result
 }
-
-// ─── Node building ───────────────────────────────────────────────────────────
 
 function buildNodes(
   tables:         Record<string, Table>,
@@ -221,23 +262,21 @@ function buildNodes(
   })
 }
 
-// ─── FitViewManager ──────────────────────────────────────────────────────────
-
 interface FitViewManagerProps {
   computedNodes: Node[]
   computedEdges: Edge[]
   setNodes: Dispatch<SetStateAction<Node[]>>
   setEdges: (edges: Edge[]) => void
+  fitEpoch: string
 }
 
-function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: FitViewManagerProps) {
+function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges, fitEpoch }: FitViewManagerProps) {
   const { fitView } = useReactFlow()
-  const selectedVersion = useSchemaStore((state) => state.selectedVersion)
   const pendingFitView = useRef(false)
 
   useEffect(() => {
     pendingFitView.current = true
-  }, [selectedVersion])
+  }, [fitEpoch])
 
   useEffect(() => {
     if (pendingFitView.current) {
@@ -277,14 +316,13 @@ function FitViewManager({ computedNodes, computedEdges, setNodes, setEdges }: Fi
   return null
 }
 
-// ─── Inner canvas (needs ReactFlow context) ──────────────────────────────────
-
 interface CanvasInnerProps {
   computedNodes: Node[]
   computedEdges: Edge[]
+  fitEpoch: string
 }
 
-function CanvasInner({ computedNodes, computedEdges }: CanvasInnerProps) {
+function CanvasInner({ computedNodes, computedEdges, fitEpoch }: CanvasInnerProps) {
   const { setHighlightedEdgeId, setSelectedTableId, setSelectedEdgeId } = useSchemaStore()
 
   const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes)
@@ -327,6 +365,7 @@ function CanvasInner({ computedNodes, computedEdges }: CanvasInnerProps) {
         computedEdges={computedEdges}
         setNodes={setNodes}
         setEdges={setEdges}
+        fitEpoch={fitEpoch}
       />
       <Background color="#30363D" gap={24} size={1} />
       <Controls />
@@ -334,51 +373,66 @@ function CanvasInner({ computedNodes, computedEdges }: CanvasInnerProps) {
   )
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
-
-function EmptyState() {
+function EmptyState({ message }: { message?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full text-[#7D8590]">
+    <div className="flex flex-col items-center justify-center h-full text-[#7D8590] px-6 text-center">
       <p className="text-4xl mb-4">⬡</p>
-      <p className="text-sm">Select a migration from the timeline</p>
+      <p className="text-sm max-w-sm">
+        {message ?? 'Select a migration from the timeline'}
+      </p>
     </div>
   )
 }
 
-// ─── Public component ────────────────────────────────────────────────────────
-
 export function SchemaCanvas() {
-  const { selectedVersion, selectedEdgeId, selectedTableId, collapsedTables } = useSchemaStore()
+  const {
+    selectedVersion,
+    selectedEdgeId,
+    selectedTableId,
+    collapsedTables,
+    compareTo,
+  } = useSchemaStore()
 
-  const { data: detail } = useQuery({
+  const comparePairValid =
+    !!selectedVersion
+    && !!compareTo
+    && compareTo !== selectedVersion
+
+  const { data: detailBase, isPending: loadingBase } = useQuery({
     queryKey: ['migration', selectedVersion],
     queryFn:  () => client.getMigrationDetail(selectedVersion!),
     enabled:  !!selectedVersion,
   })
 
-  const { data: warnings } = useQuery({
-    queryKey: ['warnings'],
-    queryFn:  client.getWarnings,
+  const { data: detailTarget, isPending: loadingTarget } = useQuery({
+    queryKey: ['migration', compareTo],
+    queryFn:  () => client.getMigrationDetail(compareTo!),
+    enabled:  comparePairValid,
   })
 
-  const diff = detail?.diff
+  const scopedWarnings = useMemo(
+    () => mergeScopedWarnings(detailBase?.warnings, detailTarget?.warnings, comparePairValid),
+    [detailBase?.warnings, detailTarget?.warnings, comparePairValid],
+  )
+
+  const activeDetail = comparePairValid ? detailTarget : detailBase
+  const diff = detailBase?.diff
   const diffInfo = useMemo(() => {
+    if (comparePairValid && detailTarget && detailBase) {
+      return schemasToDiffInfo(detailBase.schema_after.tables, detailTarget.schema_after.tables)
+    }
     if (!diff) return emptyDiffInfo()
     return diffInfoFromApi(diff)
-  }, [diff])
+  }, [comparePairValid, detailTarget, detailBase, diff])
 
   const warningCountByTable = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const w of warnings ?? []) {
-      map.set(w.table, (map.get(w.table) ?? 0) + 1)
-    }
-    return map
-  }, [warnings])
+    return countWarningsByTable(scopedWarnings)
+  }, [scopedWarnings])
 
   const { computedNodes, computedEdges } = useMemo(() => {
-    if (!detail?.schema_after?.tables) return { computedNodes: [], computedEdges: [] }
+    if (!activeDetail?.schema_after?.tables) return { computedNodes: [], computedEdges: [] }
 
-    const { rawEdges, fkColumnsMap } = buildRawEdges(detail.schema_after.tables, diffInfo)
+    const { rawEdges, fkColumnsMap } = buildRawEdges(activeDetail.schema_after.tables, diffInfo)
     const collapsedSet = collapsedTables
     const edgesWithHandles = rawEdges.map((edge) => {
       const sourceCollapsed = collapsedSet.has(edge.source)
@@ -392,7 +446,7 @@ export function SchemaCanvas() {
       animated: selectedEdgeId === edge.id,
     }))
     const nodes = buildNodes(
-      detail.schema_after.tables,
+      activeDetail.schema_after.tables,
       warningCountByTable,
       diffInfo,
       fkColumnsMap,
@@ -403,9 +457,29 @@ export function SchemaCanvas() {
     )
 
     return { computedNodes: nodes, computedEdges: edges }
-  }, [detail, diffInfo, selectedEdgeId, selectedTableId, collapsedTables, warningCountByTable])
+  }, [activeDetail, diffInfo, selectedEdgeId, selectedTableId, collapsedTables, warningCountByTable])
 
-  if (!selectedVersion) return <EmptyState />
+  const fitEpoch = comparePairValid
+    ? `cmp:${selectedVersion}:${compareTo}`
+    : `m:${selectedVersion ?? ''}`
 
-  return <CanvasInner computedNodes={computedNodes} computedEdges={computedEdges} />
+  if (!selectedVersion) {
+    return <EmptyState />
+  }
+
+  if (loadingBase || (comparePairValid && loadingTarget)) {
+    return (
+      <div className="flex items-center justify-center h-full text-[#7D8590] text-sm font-mono">
+        Loading schemas…
+      </div>
+    )
+  }
+
+  return (
+    <CanvasInner
+      computedNodes={computedNodes}
+      computedEdges={computedEdges}
+      fitEpoch={fitEpoch}
+    />
+  )
 }
