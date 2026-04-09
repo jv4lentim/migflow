@@ -361,6 +361,34 @@ class SnapshotBuilderTest < Minitest::Test
     assert_equal ["last_updated_at"], result[:diff][:modified_tables]["pets_dashboards"][:added_columns]
   end
 
+  def test_exposes_schema_before_and_schema_after
+    migrations = [
+      migration("20250000000001", <<~RUBY),
+        class CreateAccounts < ActiveRecord::Migration[8.0]
+          def change
+            create_table :accounts do |t|
+              t.string :name
+            end
+          end
+        end
+      RUBY
+      migration("20250000000002", <<~RUBY)
+        class AddEmailToAccounts < ActiveRecord::Migration[8.0]
+          def change
+            add_column :accounts, :email, :string
+          end
+        end
+      RUBY
+    ]
+
+    result = build_snapshot(migrations, "20250000000002")
+    before_columns = result[:schema_before][:tables]["accounts"][:columns].map { |c| c[:name] }
+    after_columns = result[:schema_after][:tables]["accounts"][:columns].map { |c| c[:name] }
+
+    refute_includes before_columns, "email"
+    assert_includes after_columns, "email"
+  end
+
   private
 
   def migration(version, raw_content)

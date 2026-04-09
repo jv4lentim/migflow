@@ -135,15 +135,22 @@ module Migflow
         (from_columns.keys + to_columns.keys).uniq.sort.each do |col_name|
           from_col = from_columns[col_name]
           to_col = to_columns[col_name]
-          prefix = if from_col.nil?
-                     "+"
-                   elsif to_col.nil?
-                     "-"
-                   else
-                     " "
-                   end
-          col = to_col || from_col
-          lines << { prefix: prefix, content: "  #{format_column(col)}" }
+          if from_col.nil?
+            lines << { prefix: "+", content: "  #{format_column(to_col)}" }
+            next
+          end
+
+          if to_col.nil?
+            lines << { prefix: "-", content: "  #{format_column(from_col)}" }
+            next
+          end
+
+          if equivalent_column?(from_col, to_col)
+            lines << { prefix: " ", content: "  #{format_column(to_col)}" }
+          else
+            lines << { prefix: "-", content: "  #{format_column(from_col)}" }
+            lines << { prefix: "+", content: "  #{format_column(to_col)}" }
+          end
         end
 
         from_indexes = indexes_map(from_t)
@@ -151,15 +158,22 @@ module Migflow
         (from_indexes.keys + to_indexes.keys).uniq.sort.each do |idx_key|
           from_idx = from_indexes[idx_key]
           to_idx = to_indexes[idx_key]
-          prefix = if from_idx.nil?
-                     "+"
-                   elsif to_idx.nil?
-                     "-"
-                   else
-                     " "
-                   end
-          idx = to_idx || from_idx
-          lines << { prefix: prefix, content: "  #{format_index(idx)}" }
+          if from_idx.nil?
+            lines << { prefix: "+", content: "  #{format_index(to_idx)}" }
+            next
+          end
+
+          if to_idx.nil?
+            lines << { prefix: "-", content: "  #{format_index(from_idx)}" }
+            next
+          end
+
+          if equivalent_index?(from_idx, to_idx)
+            lines << { prefix: " ", content: "  #{format_index(to_idx)}" }
+          else
+            lines << { prefix: "-", content: "  #{format_index(from_idx)}" }
+            lines << { prefix: "+", content: "  #{format_index(to_idx)}" }
+          end
         end
 
         lines << { prefix: " ", content: "end" }
@@ -196,6 +210,20 @@ module Migflow
         opts << "unique: true" if idx[:unique]
         base = "t.index #{columns}"
         opts.empty? ? base : "#{base}, #{opts.join(', ')}"
+      end
+
+      def equivalent_column?(a, b)
+        a[:name] == b[:name] &&
+          a[:type] == b[:type] &&
+          a[:null] == b[:null] &&
+          a[:default] == b[:default] &&
+          a[:limit] == b[:limit]
+      end
+
+      def equivalent_index?(a, b)
+        a[:name] == b[:name] &&
+          a[:unique] == b[:unique] &&
+          a[:columns] == b[:columns]
       end
     end
   end
