@@ -10,9 +10,9 @@ module Migflow
           tables.flat_map do |table_name, table|
             foreign_key_columns(table).map do |col|
               warning(
-                table:    table_name,
-                column:   col[:name],
-                message:  "Column '#{col[:name]}' looks like a foreign key but has no foreign key constraint",
+                table: table_name,
+                column: col[:name],
+                message: "Column '#{col[:name]}' looks like a foreign key but has no foreign key constraint",
                 severity: :info
               )
             end

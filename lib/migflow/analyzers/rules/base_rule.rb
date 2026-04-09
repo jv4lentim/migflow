@@ -10,13 +10,13 @@ module Migflow
 
         private
 
-        def warning(table:, column: nil, message:, severity: :warning)
+        def warning(table:, message:, column: nil, severity: :warning)
           Models::Warning.new(
-            rule:     rule_name,
+            rule: rule_name,
             severity: severity,
-            table:    table,
-            column:   column,
-            message:  message
+            table: table,
+            column: column,
+            message: message
           )
         end
 

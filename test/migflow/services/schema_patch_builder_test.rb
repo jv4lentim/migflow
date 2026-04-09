@@ -152,10 +152,12 @@ class SchemaPatchBuilderTest < Minitest::Test
 
   def test_formats_index_changes
     from_tables = {
-      "events" => table_with_columns(%w[name], indexes: [{ name: "index_events_on_name", columns: ["name"], unique: false }])
+      "events" => table_with_columns(%w[name],
+                                     indexes: [{ name: "index_events_on_name", columns: ["name"], unique: false }])
     }
     to_tables = {
-      "events" => table_with_columns(%w[name], indexes: [{ name: "idx_events_name_unique", columns: ["name"], unique: true }])
+      "events" => table_with_columns(%w[name],
+                                     indexes: [{ name: "idx_events_name_unique", columns: ["name"], unique: true }])
     }
 
     patch = Migflow::Services::SchemaPatchBuilder.call(
@@ -171,10 +173,12 @@ class SchemaPatchBuilderTest < Minitest::Test
 
   def test_formats_index_option_changes_with_same_name
     from_tables = {
-      "events" => table_with_columns(%w[name], indexes: [{ name: "index_events_on_name", columns: ["name"], unique: false }])
+      "events" => table_with_columns(%w[name],
+                                     indexes: [{ name: "index_events_on_name", columns: ["name"], unique: false }])
     }
     to_tables = {
-      "events" => table_with_columns(%w[name], indexes: [{ name: "index_events_on_name", columns: ["name"], unique: true }])
+      "events" => table_with_columns(%w[name],
+                                     indexes: [{ name: "index_events_on_name", columns: ["name"], unique: true }])
     }
 
     patch = Migflow::Services::SchemaPatchBuilder.call(

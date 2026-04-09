@@ -18,13 +18,13 @@ module Migflow
         scanner = MigrationDslScanner.new(@raw_content)
 
         created_tables = scanner.create_table_blocks.map(&:first)
-        return "Created table #{created_tables.join(', ')}" if created_tables.any?
+        return "Created table #{created_tables.join(", ")}" if created_tables.any?
 
         dropped_tables = scanner.drop_tables
-        return "Dropped table #{dropped_tables.join(', ')}" if dropped_tables.any?
+        return "Dropped table #{dropped_tables.join(", ")}" if dropped_tables.any?
 
         added_details = added_column_details(scanner) + added_reference_details(scanner)
-        return "Added #{added_details.join(', ')}" if added_details.any?
+        return "Added #{added_details.join(", ")}" if added_details.any?
 
         "Migration #{@version}"
       end

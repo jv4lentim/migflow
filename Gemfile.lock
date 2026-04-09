@@ -264,7 +264,7 @@ PLATFORMS
 DEPENDENCIES
   migflow!
   minitest (~> 5.16)
-  minitest-reporters
+  minitest-reporters (~> 1.7)
   rake (~> 13.0)
   rubocop (~> 1.21)
 

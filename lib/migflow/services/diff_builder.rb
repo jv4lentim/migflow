@@ -18,8 +18,8 @@ module Migflow
       def build
         Models::SchemaDiff.new(
           from_version: @from_version,
-          to_version:   @to_version,
-          changes:      table_changes + column_changes + index_changes
+          to_version: @to_version,
+          changes: table_changes + column_changes + index_changes
         )
       end
 
@@ -36,8 +36,12 @@ module Migflow
           from_cols = column_map(@from_tables[table])
           to_cols   = column_map(@to_tables[table])
 
-          added   = (to_cols.keys - from_cols.keys).map { |c| change(:added_column, table, "added #{c} (#{to_cols[c][:type]})") }
-          removed = (from_cols.keys - to_cols.keys).map { |c| change(:removed_column, table, "removed #{c} (#{from_cols[c][:type]})") }
+          added = (to_cols.keys - from_cols.keys).map do |c|
+            change(:added_column, table, "added #{c} (#{to_cols[c][:type]})")
+          end
+          removed = (from_cols.keys - to_cols.keys).map do |c|
+            change(:removed_column, table, "removed #{c} (#{from_cols[c][:type]})")
+          end
           added + removed
         end
       end

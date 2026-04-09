@@ -8,9 +8,9 @@ module Migflow
           tables.flat_map do |table_name, table|
             string_columns_without_limit(table).map do |col|
               warning(
-                table:    table_name,
-                column:   col[:name],
-                message:  "String column '#{col[:name]}' has no limit defined",
+                table: table_name,
+                column: col[:name],
+                message: "String column '#{col[:name]}' has no limit defined",
                 severity: :info
               )
             end

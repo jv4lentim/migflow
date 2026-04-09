@@ -106,6 +106,7 @@ module Migflow
 
         block.scan(/t\.(\w+)\s+[:"'](\w+)[:"']?([^\n]*)/) do |type, name, opts|
           next if BLOCK_NON_COLUMNS.include?(type)
+
           definitions << [type, name, opts]
         end
 

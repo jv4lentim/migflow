@@ -4,7 +4,7 @@ Migflow::Engine.routes.draw do
   root to: "application#index"
 
   namespace :api do
-    resources :migrations, only: [:index, :show]
+    resources :migrations, only: %i[index show]
     get "diff", to: "diff#show"
   end
 end

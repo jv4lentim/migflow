@@ -14,9 +14,9 @@ module Migflow
       def build
         parsed = Parsers::SchemaParser.call(schema_path: @schema_path)
         Models::MigrationSnapshot.new(
-          version:     parsed[:version],
-          name:        "Current schema",
-          tables:      parsed[:tables],
+          version: parsed[:version],
+          name: "Current schema",
+          tables: parsed[:tables],
           raw_content: Pathname.new(@schema_path).read
         )
       end

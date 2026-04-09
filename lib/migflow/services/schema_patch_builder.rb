@@ -22,10 +22,11 @@ module Migflow
       def build
         document = build_document
         lines = document[:lines]
-        has_diff = lines.any? { |line| line[:prefix] == "+" || line[:prefix] == "-" }
+        has_diff = lines.any? { |line| ["+", "-"].include?(line[:prefix]) }
         return "" unless has_diff
 
         return build_full_patch(lines) if @include_unchanged
+
         build_collapsed_patch(lines, document[:sections])
       end
 
@@ -127,7 +128,11 @@ module Migflow
         is_added = from_t.nil? && !to_t.nil?
         is_removed = !from_t.nil? && to_t.nil?
 
-        header_prefix = is_added ? "+" : is_removed ? "-" : " "
+        header_prefix = if is_added
+                          "+"
+                        else
+                          is_removed ? "-" : " "
+                        end
         lines << { prefix: header_prefix, content: "create_table \"#{table_name}\" do |t|" }
 
         from_columns = columns_map(from_t)
@@ -182,11 +187,13 @@ module Migflow
 
       def columns_map(table)
         return {} unless table
-        table[:columns].each_with_object({}) { |col, memo| memo[col[:name]] = col }
+
+        table[:columns].to_h { |col| [col[:name], col] }
       end
 
       def indexes_map(table)
         return {} unless table
+
         table[:indexes].each_with_object({}) do |idx, memo|
           key = idx[:name] || idx[:columns].join("_")
           memo[key] = idx
@@ -200,30 +207,30 @@ module Migflow
         opts << "default: #{col[:default]}" unless col[:default].nil?
         opts << "limit: #{col[:limit]}" unless col[:limit].nil?
         base = "t.#{type} \"#{col[:name]}\""
-        opts.empty? ? base : "#{base}, #{opts.join(', ')}"
+        opts.empty? ? base : "#{base}, #{opts.join(", ")}"
       end
 
       def format_index(idx)
-        columns = "[#{idx[:columns].map { |c| "\"#{c}\"" }.join(', ')}]"
+        columns = "[#{idx[:columns].map { |c| "\"#{c}\"" }.join(", ")}]"
         opts = []
         opts << "name: \"#{idx[:name]}\"" if idx[:name]
         opts << "unique: true" if idx[:unique]
         base = "t.index #{columns}"
-        opts.empty? ? base : "#{base}, #{opts.join(', ')}"
+        opts.empty? ? base : "#{base}, #{opts.join(", ")}"
       end
 
-      def equivalent_column?(a, b)
-        a[:name] == b[:name] &&
-          a[:type] == b[:type] &&
-          a[:null] == b[:null] &&
-          a[:default] == b[:default] &&
-          a[:limit] == b[:limit]
+      def equivalent_column?(one, other)
+        one[:name] == other[:name] &&
+          one[:type] == other[:type] &&
+          one[:null] == other[:null] &&
+          one[:default] == other[:default] &&
+          one[:limit] == other[:limit]
       end
 
-      def equivalent_index?(a, b)
-        a[:name] == b[:name] &&
-          a[:unique] == b[:unique] &&
-          a[:columns] == b[:columns]
+      def equivalent_index?(one, other)
+        one[:name] == other[:name] &&
+          one[:unique] == other[:unique] &&
+          one[:columns] == other[:columns]
       end
     end
   end

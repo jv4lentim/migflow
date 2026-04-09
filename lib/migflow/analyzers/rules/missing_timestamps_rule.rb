@@ -12,8 +12,8 @@ module Migflow
             next if has_timestamps?(table)
 
             warning(
-              table:    table_name,
-              message:  "Table '#{table_name}' is missing created_at and/or updated_at",
+              table: table_name,
+              message: "Table '#{table_name}' is missing created_at and/or updated_at",
               severity: :warning
             )
           end

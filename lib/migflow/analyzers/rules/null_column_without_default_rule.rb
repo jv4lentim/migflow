@@ -6,7 +6,7 @@ module Migflow
       class NullColumnWithoutDefaultRule < BaseRule
         ADD_COLUMN_PATTERN = /add_column\s+[:"'](\w+)[:"']?,\s+[:"'](\w+)[:"']?,\s+:\w+(.*)/
 
-        def call(tables)
+        def call(_tables)
           []
         end
 
@@ -23,9 +23,11 @@ module Migflow
             next if nullable?(options) || has_default?(options)
 
             warning(
-              table:    table,
-              column:   column,
-              message:  "NOT NULL column '#{column}' added to '#{table}' without a default — locks deploys on large tables",
+              table: table,
+              column: column,
+              message:
+                "NOT NULL column '#{column}' added to '#{table}' without a default — " \
+                "locks deploys on large tables",
               severity: :error
             )
           end

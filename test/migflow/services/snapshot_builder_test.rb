@@ -6,25 +6,25 @@ require "migflow/services/snapshot_builder"
 class SnapshotBuilderTest < Minitest::Test
   def test_create_table_references_builds_fk_column
     result = build_snapshot([
-      migration("20250000000001", <<~RUBY),
-        class CreateAlbums < ActiveRecord::Migration[8.0]
-          def change
-            create_table :albums do |t|
-              t.string :name
-            end
-          end
-        end
-      RUBY
-      migration("20250000000002", <<~RUBY)
-        class CreateTempFiles < ActiveRecord::Migration[8.0]
-          def change
-            create_table :temp_files do |t|
-              t.references :album, null: false, foreign_key: true
-            end
-          end
-        end
-      RUBY
-    ], "20250000000002")
+                              migration("20250000000001", <<~RUBY),
+                                class CreateAlbums < ActiveRecord::Migration[8.0]
+                                  def change
+                                    create_table :albums do |t|
+                                      t.string :name
+                                    end
+                                  end
+                                end
+                              RUBY
+                              migration("20250000000002", <<~RUBY)
+                                class CreateTempFiles < ActiveRecord::Migration[8.0]
+                                  def change
+                                    create_table :temp_files do |t|
+                                      t.references :album, null: false, foreign_key: true
+                                    end
+                                  end
+                                end
+                              RUBY
+                            ], "20250000000002")
 
     columns = result[:schema_after][:tables]["temp_files"][:columns].map { |c| c[:name] }
     assert_includes columns, "album_id"
@@ -144,18 +144,18 @@ class SnapshotBuilderTest < Minitest::Test
 
   def test_create_table_parses_t_column_and_inline_indexes
     result = build_snapshot([
-      migration("20250000000001", <<~RUBY)
-        class CreateInvoices < ActiveRecord::Migration[8.0]
-          def change
-            create_table :invoices do |t|
-              t.column :amount, :decimal, null: false
-              t.string :status
-              t.index :status, name: "index_invoices_on_status"
-            end
-          end
-        end
-      RUBY
-    ], "20250000000001")
+                              migration("20250000000001", <<~RUBY)
+                                class CreateInvoices < ActiveRecord::Migration[8.0]
+                                  def change
+                                    create_table :invoices do |t|
+                                      t.column :amount, :decimal, null: false
+                                      t.string :status
+                                      t.index :status, name: "index_invoices_on_status"
+                                    end
+                                  end
+                                end
+                              RUBY
+                            ], "20250000000001")
 
     columns = result[:schema_after][:tables]["invoices"][:columns]
     indexes = result[:schema_after][:tables]["invoices"][:indexes]

@@ -25,19 +25,19 @@ module Migflow
 
       def snapshot_model_from(schema_after, version)
         Models::MigrationSnapshot.new(
-          version:     version,
-          name:        "Historical schema",
-          tables:      schema_after[:tables],
+          version: version,
+          name: "Historical schema",
+          tables: schema_after[:tables],
           raw_content: ""
         )
       end
 
       def serialize_summary(migration)
         {
-          version:  migration[:version],
-          name:     migration[:name],
+          version: migration[:version],
+          name: migration[:name],
           filename: migration[:filename],
-          summary:  Services::MigrationSummaryBuilder.call(
+          summary: Services::MigrationSummaryBuilder.call(
             raw_content: migration[:raw_content],
             version: migration[:version]
           )
@@ -55,30 +55,29 @@ module Migflow
         ).uniq
 
         {
-          version:      migration[:version],
-          name:         migration[:name],
-          raw_content:  migration[:raw_content],
+          version: migration[:version],
+          name: migration[:name],
+          raw_content: migration[:raw_content],
           schema_after: { tables: schema_after_tables },
-          diff:         diff,
+          diff: diff,
           **serialize_schema_patches(
             from_tables: schema_before_tables,
             to_tables: schema_after_tables,
             changed_tables: changed_tables
           ),
-          warnings:     warnings.map { |w| serialize_warning(w) }
+          warnings: warnings.map { |w| serialize_warning(w) }
         }
       end
 
       def serialize_warning(warning)
         {
-          rule:     warning.rule,
+          rule: warning.rule,
           severity: warning.severity,
-          table:    warning.table,
-          column:   warning.column,
-          message:  warning.message
+          table: warning.table,
+          column: warning.column,
+          message: warning.message
         }
       end
-
     end
   end
 end

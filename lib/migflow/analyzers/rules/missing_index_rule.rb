@@ -8,9 +8,9 @@ module Migflow
           tables.flat_map do |table_name, table|
             foreign_key_columns(table).reject { |col| indexed?(col, table) }.map do |col|
               warning(
-                table:    table_name,
-                column:   col[:name],
-                message:  "Column '#{col[:name]}' looks like a foreign key but has no index",
+                table: table_name,
+                column: col[:name],
+                message: "Column '#{col[:name]}' looks like a foreign key but has no index",
                 severity: :warning
               )
             end

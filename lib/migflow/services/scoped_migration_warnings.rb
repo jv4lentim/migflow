@@ -53,11 +53,11 @@ module Migflow
 
       def noop_migration_warning
         Models::Warning.new(
-          rule:     NOOP_INFO_RULE,
+          rule: NOOP_INFO_RULE,
           severity: :info,
-          table:    "_",
-          column:   nil,
-          message:  "No schema operations detected (empty migration or DSL not recognized by Migflow)."
+          table: "_",
+          column: nil,
+          message: "No schema operations detected (empty migration or DSL not recognized by Migflow)."
         )
       end
     end

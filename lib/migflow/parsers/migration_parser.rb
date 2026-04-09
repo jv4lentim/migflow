@@ -36,10 +36,10 @@ module Migflow
         raw_name = match[2]
 
         {
-          version:     version,
-          name:        humanize(raw_name),
-          filename:    file.basename.to_s,
-          filepath:    file,
+          version: version,
+          name: humanize(raw_name),
+          filename: file.basename.to_s,
+          filepath: file,
           raw_content: file.read
         }
       end

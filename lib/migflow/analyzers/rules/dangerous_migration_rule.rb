@@ -5,12 +5,12 @@ module Migflow
     module Rules
       class DangerousMigrationRule < BaseRule
         DANGEROUS_OPERATIONS = {
-          remove_column:  "Removes a column — may break running app instances",
-          drop_table:     "Drops a table — destructive and irreversible",
-          rename_column:  "Renames a column — breaks existing queries and code"
+          remove_column: "Removes a column — may break running app instances",
+          drop_table: "Drops a table — destructive and irreversible",
+          rename_column: "Renames a column — breaks existing queries and code"
         }.freeze
 
-        def call(tables)
+        def call(_tables)
           []
         end
 
@@ -27,8 +27,8 @@ module Migflow
             next unless content.match?(/\b#{operation}\b/)
 
             warning(
-              table:    extract_table(content, operation),
-              message:  "#{filename}: #{message}",
+              table: extract_table(content, operation),
+              message: "#{filename}: #{message}",
               severity: :error
             )
           end

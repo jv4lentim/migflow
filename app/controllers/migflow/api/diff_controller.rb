@@ -28,10 +28,11 @@ module Migflow
       def build_diff(migrations, from_data, to_data)
         ordered = migrations.sort_by { |migration| migration[:version] }
         from_idx = ordered.find_index { |migration| migration[:version] == from_data[:version] }
-        previous_from = from_idx && from_idx.positive? ? ordered[from_idx - 1] : nil
+        previous_from = from_idx&.positive? ? ordered[from_idx - 1] : nil
 
         from_tables = if previous_from
-                        previous_result = Services::SnapshotBuilder.call(migrations: migrations, up_to_version: previous_from[:version])
+                        previous_result = Services::SnapshotBuilder.call(migrations: migrations,
+                                                                         up_to_version: previous_from[:version])
                         previous_result[:schema_after][:tables]
                       else
                         {}
@@ -39,10 +40,10 @@ module Migflow
         to_result   = Services::SnapshotBuilder.call(migrations: migrations, up_to_version: to_data[:version])
 
         diff = Services::DiffBuilder.call(
-          from_tables:  from_tables,
-          to_tables:    to_result[:schema_after][:tables],
+          from_tables: from_tables,
+          to_tables: to_result[:schema_after][:tables],
           from_version: from_data[:version],
-          to_version:   to_data[:version]
+          to_version: to_data[:version]
         )
 
         {
@@ -58,8 +59,8 @@ module Migflow
 
         {
           from_version: diff.from_version,
-          to_version:   diff.to_version,
-          changes:      diff.changes.map { |c| { type: c.type, table: c.table, detail: c.detail } },
+          to_version: diff.to_version,
+          changes: diff.changes.map { |c| { type: c.type, table: c.table, detail: c.detail } },
           **serialize_schema_patches(
             from_tables: result[:from_tables],
             to_tables: result[:to_tables],

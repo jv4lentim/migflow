@@ -5,9 +5,9 @@ require "test_helper"
 class AuditAnalyzerTest < Minitest::Test
   def build_snapshot(tables)
     Migflow::Models::MigrationSnapshot.new(
-      version:     "20240101",
-      name:        "Test snapshot",
-      tables:      tables,
+      version: "20240101",
+      name: "Test snapshot",
+      tables: tables,
       raw_content: ""
     )
   end

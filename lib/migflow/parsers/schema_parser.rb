@@ -3,7 +3,7 @@
 module Migflow
   module Parsers
     class SchemaParser
-      VERSION_PATTERN     = /ActiveRecord::Schema(?:\[[\d.]+\])?\.define\(version:\s*([\d_]+)\)/
+      VERSION_PATTERN = /ActiveRecord::Schema(?:\[[\d.]+\])?\.define\(version:\s*([\d_]+)\)/
       CREATE_TABLE_PATTERN = /create_table\s+"([^"]+)"/
       COLUMN_PATTERN      = /t\.(\w+)\s+"([^"]+)"(.*)/
       INDEX_PATTERN       = /add_index\s+"([^"]+)",\s+(\[.*?\]|"[^"]+"|'[^']+')(.*)/
@@ -24,7 +24,7 @@ module Migflow
         content = @schema_path.read
         {
           version: extract_version(content),
-          tables:  extract_tables(content)
+          tables: extract_tables(content)
         }
       end
 
@@ -67,9 +67,9 @@ module Migflow
         limit_match   = LIMIT_PATTERN.match(options)
 
         column = {
-          name:    name,
-          type:    type,
-          null:    null_match ? null_match[1] == "true" : true,
+          name: name,
+          type: type,
+          null: null_match ? null_match[1] == "true" : true,
           default: default_match ? default_match[1].strip : nil
         }
         column[:limit] = limit_match[1].to_i if limit_match
@@ -87,9 +87,9 @@ module Migflow
       def build_index(columns_raw, options)
         name_match = /name:\s*"([^"]+)"/.match(options)
         {
-          name:    name_match ? name_match[1] : nil,
+          name: name_match ? name_match[1] : nil,
           columns: parse_index_columns(columns_raw),
-          unique:  UNIQUE_PATTERN.match?(options)
+          unique: UNIQUE_PATTERN.match?(options)
         }
       end
 
