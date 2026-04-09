@@ -38,6 +38,8 @@ export interface MigrationDetail extends Migration {
   raw_content: string
   schema_after: Schema
   diff: MigrationDiff
+  schema_patch: string
+  schema_patch_full: string
   warnings: Warning[]
 }
 
@@ -76,4 +78,6 @@ export interface Diff {
   from_version: string
   to_version: string
   changes: DiffChange[]
+  schema_patch: string
+  schema_patch_full: string
 }

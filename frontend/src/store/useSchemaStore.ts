@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+export type ViewMode = 'flow' | 'schema'
+
 interface SchemaStore {
   selectedVersion:    string | null
   /** Optional compare target; null = none (canvas shows base only). */
@@ -8,6 +10,8 @@ interface SchemaStore {
   selectedTableId:    string | null
   selectedEdgeId:     string | null
   collapsedTables:    Set<string>
+  viewMode:           ViewMode
+  isRightPanelCollapsed: boolean
 
   setSelectedVersion:   (version: string) => void
   selectMigration:      (version: string) => void
@@ -16,6 +20,9 @@ interface SchemaStore {
   setSelectedTableId:   (id: string | null) => void
   setSelectedEdgeId:    (id: string | null) => void
   toggleTableCollapsed: (tableId: string) => void
+  setViewMode:          (mode: ViewMode) => void
+  toggleRightPanelCollapsed: () => void
+  setRightPanelCollapsed: (collapsed: boolean) => void
 }
 
 export const useSchemaStore = create<SchemaStore>((set) => ({
@@ -25,13 +32,15 @@ export const useSchemaStore = create<SchemaStore>((set) => ({
   selectedTableId:    null,
   selectedEdgeId:     null,
   collapsedTables:    new Set<string>(),
+  viewMode:           'flow',
+  isRightPanelCollapsed: false,
 
   setSelectedVersion:   (version) => set({ selectedVersion: version }),
   selectMigration:      (version) => set((s) => ({
     selectedVersion: version,
     selectedTableId:  null,
     selectedEdgeId:  null,
-    compareTo:         s.compareTo === version ? null : s.compareTo,
+    compareTo:         s.compareTo,
   })),
   setCompareTo:         (version) => set({ compareTo: version || null }),
   setHighlightedEdgeId: (id)      => set({ highlightedEdgeId: id }),
@@ -43,4 +52,7 @@ export const useSchemaStore = create<SchemaStore>((set) => ({
     else next.add(tableId)
     return { collapsedTables: next }
   }),
+  setViewMode:          (mode) => set({ viewMode: mode }),
+  toggleRightPanelCollapsed: () => set((s) => ({ isRightPanelCollapsed: !s.isRightPanelCollapsed })),
+  setRightPanelCollapsed: (collapsed) => set({ isRightPanelCollapsed: collapsed }),
 }))

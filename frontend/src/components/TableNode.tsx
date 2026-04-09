@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import type { ColumnWithDiff, IndexWithDiff } from '../types/migration'
+import type { ColumnWithDiff } from '../types/migration'
 import { useSchemaStore } from '../store/useSchemaStore'
 import {
   HEADER_HEIGHT,
@@ -17,7 +17,6 @@ export { HEADER_HEIGHT, COLUMN_HEIGHT, NODE_WIDTH } from '../constants/layout'
 export interface TableNodeData {
   label:        string
   columns:      ColumnWithDiff[]
-  indexes:      IndexWithDiff[]
   warningCount: number
   tableStatus?: 'added' | 'removed'
   fkColumns:    string[]
@@ -48,19 +47,15 @@ function typeIcon(type: string): string {
 
 interface ColumnRowProps {
   column:    ColumnWithDiff
-  indexes:   IndexWithDiff[]
   fkEdgeId:  string | undefined
   columnIndex: number
 }
 
-function ColumnRow({ column, indexes, fkEdgeId, columnIndex }: ColumnRowProps) {
+function ColumnRow({ column, fkEdgeId, columnIndex }: ColumnRowProps) {
   const { setHighlightedEdgeId } = useSchemaStore()
 
   const isFk     = !!fkEdgeId
   const status   = column.diffStatus
-  const idxEntry = indexes.find((idx) => idx.columns.includes(column.name))
-  const indexed  = !!idxEntry
-  const idxStatus = idxEntry?.diffStatus
 
   const rowBg =
     status === 'added'   ? palette.rowAddedBg :
@@ -74,10 +69,6 @@ function ColumnRow({ column, indexes, fkEdgeId, columnIndex }: ColumnRowProps) {
     '#E6EDF3'
 
   const typeColor    = status === 'removed' ? palette.diffRemoved : '#7D8590'
-  const lightningColor = idxStatus === 'added'   ? palette.diffAdded :
-                       idxStatus === 'removed' ? palette.diffRemoved :
-                       palette.warning
-
   return (
     <div
       className={`flex items-center gap-1.5 px-3 text-xs transition-colors cursor-default box-border ${columnIndex > 0 ? 'border-t border-[#30363D]' : ''} ${!rowBg ? 'hover:bg-[#0D1117]' : ''}`}
@@ -104,14 +95,13 @@ function ColumnRow({ column, indexes, fkEdgeId, columnIndex }: ColumnRowProps) {
         </span>
       )}
 
-      {indexed  && <span className="shrink-0" style={{ color: lightningColor }} title="indexed">⚡</span>}
       {isFk && !status && <span className="shrink-0" style={{ color: palette.accent }} title="foreign key">⇢</span>}
     </div>
   )
 }
 
 export const TableNode = memo(({ data, id }: NodeProps) => {
-  const { label, columns, indexes, warningCount, tableStatus, fkColumns, fkEdgeMap, isEdgeSelected, isSelected, isCollapsed } =
+  const { label, columns, warningCount, tableStatus, fkColumns, fkEdgeMap, isEdgeSelected, isSelected, isCollapsed } =
     data as TableNodeData
 
   const isNew     = tableStatus === 'added'
@@ -246,7 +236,6 @@ export const TableNode = memo(({ data, id }: NodeProps) => {
             <ColumnRow
               key={col.name}
               column={col}
-              indexes={indexes as IndexWithDiff[]}
               fkEdgeId={fkSet.has(col.name) ? (fkEdgeMap ?? {})[col.name] : undefined}
               columnIndex={idx}
             />

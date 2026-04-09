@@ -334,6 +334,33 @@ class SnapshotBuilderTest < Minitest::Test
     assert_equal "Current workflow state", status[:comment]
   end
 
+  def test_add_column_supports_parenthesized_syntax
+    migrations = [
+      migration("20250000000001", <<~RUBY),
+        class CreatePetsDashboards < ActiveRecord::Migration[8.0]
+          def change
+            create_table :pets_dashboards do |t|
+              t.string :name
+            end
+          end
+        end
+      RUBY
+      migration("20250000000002", <<~RUBY)
+        class AddLastUpdatedAtToPetsDashboard < ActiveRecord::Migration[8.0]
+          def change
+            add_column(:pets_dashboards, :last_updated_at, :date)
+          end
+        end
+      RUBY
+    ]
+
+    result = build_snapshot(migrations, "20250000000002")
+    columns = result[:schema_after][:tables]["pets_dashboards"][:columns].map { |c| c[:name] }
+
+    assert_includes columns, "last_updated_at"
+    assert_equal ["last_updated_at"], result[:diff][:modified_tables]["pets_dashboards"][:added_columns]
+  end
+
   private
 
   def migration(version, raw_content)

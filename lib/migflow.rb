@@ -14,6 +14,7 @@ require "migflow/services/diff_builder"
 require "migflow/services/migration_dsl_scanner"
 require "migflow/services/migration_summary_builder"
 require "migflow/services/snapshot_builder"
+require "migflow/services/schema_patch_builder"
 require "migflow/services/touched_tables_from_migration"
 require "migflow/services/scoped_migration_warnings"
 

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useSchemaStore } from './store/useSchemaStore'
 import { Timeline } from './components/Timeline'
 import { SchemaCanvas } from './components/SchemaCanvas'
+import { SchemaDiffView } from './components/SchemaDiffView'
 import { DetailPanel } from './components/DetailPanel'
 import { CompareBar } from './components/CompareBar'
 import { ResizablePanel } from './components/ResizablePanel'
@@ -11,7 +12,12 @@ const queryClient = new QueryClient({
 })
 
 function Layout() {
-  const { selectedVersion } = useSchemaStore()
+  const {
+    selectedVersion,
+    viewMode,
+    isRightPanelCollapsed,
+    toggleRightPanelCollapsed,
+  } = useSchemaStore()
 
   return (
     <div className="flex flex-col h-screen bg-[#0D1117] text-[#E6EDF3] overflow-hidden">
@@ -36,7 +42,18 @@ function Layout() {
         <main className="flex-1 min-w-0 relative flex flex-col min-h-0">
           <CompareBar />
           <div className="flex-1 min-h-0 relative">
-            <SchemaCanvas />
+            <div
+              className={viewMode === 'flow' ? 'absolute inset-0' : 'absolute inset-0 hidden'}
+              aria-hidden={viewMode !== 'flow'}
+            >
+              <SchemaCanvas />
+            </div>
+            <div
+              className={viewMode === 'schema' ? 'absolute inset-0' : 'absolute inset-0 hidden'}
+              aria-hidden={viewMode !== 'schema'}
+            >
+              <SchemaDiffView />
+            </div>
           </div>
         </main>
 
@@ -46,10 +63,26 @@ function Layout() {
             minWidth={200}
             maxWidth={600}
             side="right"
+            collapsed={isRightPanelCollapsed}
+            onToggleCollapse={toggleRightPanelCollapsed}
             className="border-l border-[#30363D] overflow-hidden"
           >
-            <div className="h-full flex flex-col">
-              <DetailPanel />
+            <div className="h-full flex flex-col min-h-0">
+              <div className="flex items-center justify-end px-2 py-1.5 border-b border-[#30363D] shrink-0 bg-[#0D1117]">
+                <button
+                  type="button"
+                  onClick={toggleRightPanelCollapsed}
+                  aria-label="Collapse detail panel"
+                  className="p-1 rounded-md text-[#7D8590] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <DetailPanel />
+              </div>
             </div>
           </ResizablePanel>
         )}

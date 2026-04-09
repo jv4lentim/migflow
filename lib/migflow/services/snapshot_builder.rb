@@ -23,7 +23,7 @@ module Migflow
           after  = apply_migration(after, migration[:raw_content])
         end
 
-        { schema_after: after, diff: calculate_diff(before, after) }
+        { schema_before: before, schema_after: after, diff: calculate_diff(before, after) }
       end
 
       private

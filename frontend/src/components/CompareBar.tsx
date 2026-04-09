@@ -1,6 +1,40 @@
 import { useQuery } from '@tanstack/react-query'
 import { client } from '../api/client'
-import { useSchemaStore } from '../store/useSchemaStore'
+import { useSchemaStore, type ViewMode } from '../store/useSchemaStore'
+
+function ViewModeSwitch() {
+  const { viewMode, setViewMode } = useSchemaStore()
+
+  return (
+    <div
+      role="tablist"
+      aria-label="View mode"
+      className="flex rounded-md border border-[#30363D] overflow-hidden shrink-0 bg-[#161B22]"
+    >
+      {(['flow', 'schema'] as ViewMode[]).map((mode) => {
+        const selected = viewMode === mode
+        const label = mode === 'flow' ? 'Flow' : 'Schema'
+        return (
+          <button
+            key={mode}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => setViewMode(mode)}
+            className={`px-3 py-1 text-xs font-mono uppercase tracking-wider transition-colors ${
+              selected
+                ? 'bg-[#21262D] text-[#58A6FF] shadow-[inset_0_-2px_0_0_#58A6FF]'
+                : 'text-[#7D8590] hover:text-[#E6EDF3]'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 export function CompareBar() {
   const { selectedVersion, compareTo, setCompareTo } = useSchemaStore()
@@ -47,8 +81,8 @@ export function CompareBar() {
         aria-label="Compare target migration"
       >
         <option value="">None</option>
-        {migrations
-          ?.filter((m) => m.version !== selectedVersion)
+        {[...(migrations ?? [])]
+          .reverse()
           .map((m) => (
             <option key={m.version} value={m.version}>
               {m.version} — {m.name}
@@ -57,10 +91,14 @@ export function CompareBar() {
       </select>
 
       {compareActive && (
-        <span className="text-xs text-[#7D8590] font-mono shrink-0 ml-auto">
+        <span className="text-xs text-[#7D8590] font-mono shrink-0">
           {isFetching ? '…' : `${diff?.changes.length ?? 0} changes`}
         </span>
       )}
+
+      <div className="flex-1 min-w-2" aria-hidden="true" />
+
+      <ViewModeSwitch />
     </div>
   )
 }

@@ -26,7 +26,7 @@ module Migflow
       end
 
       def add_columns
-        @content.scan(/add_column\s+[:"'](\w+)[:"']?,\s*[:"'](\w+)[:"']?,\s*[:"'](\w+)([^\n]*)/)
+        @content.scan(/add_column\s*\(?\s*[:"'](\w+)[:"']?\s*,\s*[:"'](\w+)[:"']?\s*,\s*[:"'](\w+)([^\n]*)/)
       end
 
       def remove_column

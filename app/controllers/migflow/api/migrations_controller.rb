@@ -18,7 +18,7 @@ module Migflow
         snapshot = snapshot_model_from(result[:schema_after], migration[:version])
         warnings = Services::ScopedMigrationWarnings.call(snapshot: snapshot, migration: migration)
 
-        render_json(migration: serialize_detail(migration, result[:schema_after], result[:diff], warnings))
+        render_json(migration: serialize_detail(migration, result, warnings))
       end
 
       private
@@ -44,13 +44,27 @@ module Migflow
         }
       end
 
-      def serialize_detail(migration, schema_after, diff, warnings)
+      def serialize_detail(migration, snapshot_result, warnings)
+        schema_before_tables = snapshot_result[:schema_before][:tables]
+        schema_after_tables = snapshot_result[:schema_after][:tables]
+        diff = snapshot_result[:diff]
+        changed_tables = (
+          diff[:added_tables] +
+          diff[:removed_tables] +
+          diff[:modified_tables].keys
+        ).uniq
+
         {
           version:      migration[:version],
           name:         migration[:name],
           raw_content:  migration[:raw_content],
-          schema_after: { tables: schema_after[:tables] },
+          schema_after: { tables: schema_after_tables },
           diff:         diff,
+          **serialize_schema_patches(
+            from_tables: schema_before_tables,
+            to_tables: schema_after_tables,
+            changed_tables: changed_tables
+          ),
           warnings:     warnings.map { |w| serialize_warning(w) }
         }
       end

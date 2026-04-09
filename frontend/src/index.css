@@ -65,3 +65,34 @@ body,
 .react-flow__edge-path {
   cursor: pointer;
 }
+
+.migflow-schema-diff {
+  --diff-background-color: #161B22;
+  --diff-text-color: #E6EDF3;
+  --diff-selection-background-color: #1f2a3a;
+  --diff-selection-text-color: #E6EDF3;
+  --diff-gutter-insert-background-color: #113218;
+  --diff-gutter-insert-text-color: #56D364;
+  --diff-gutter-delete-background-color: #3a1618;
+  --diff-gutter-delete-text-color: #FF6B6B;
+  --diff-code-insert-background-color: #113218;
+  --diff-code-insert-text-color: #E6EDF3;
+  --diff-code-delete-background-color: #3a1618;
+  --diff-code-delete-text-color: #E6EDF3;
+  --diff-code-insert-edit-background-color: #1a4724;
+  --diff-code-delete-edit-background-color: #4a1d20;
+  --diff-code-selected-background-color: #1f2a3a;
+  --diff-code-selected-text-color: #E6EDF3;
+}
+
+.migflow-schema-diff .diff-gutter-hunk,
+.migflow-schema-diff .diff-code-hunk {
+  background: #111827;
+  color: #9CA3AF;
+}
+
+/* Visual gap between hunks/tables without changing line numbers. */
+.migflow-schema-diff .diff tbody + tbody .diff-gutter,
+.migflow-schema-diff .diff tbody + tbody .diff-code {
+  border-top: 12px solid #161B22;
+}

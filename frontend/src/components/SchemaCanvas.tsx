@@ -3,6 +3,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -10,62 +11,15 @@ import {
   type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useQuery } from '@tanstack/react-query'
-import { client } from '../api/client'
 import { useSchemaStore } from '../store/useSchemaStore'
+import { useSchemaComparisonData } from '../hooks/useSchemaComparisonData'
 import { TableNode, type TableNodeData } from './TableNode'
 import { NODE_WIDTH, nodeHeight, HEADER_HEIGHT } from '../constants/layout'
 import { RelationshipEdge } from './RelationshipEdge'
-import type { Table, ColumnWithDiff, IndexWithDiff, DiffInfo, Warning } from '../types/migration'
-import { diffInfoFromApi, emptyDiffInfo } from '../utils/parseMigrationChanges'
-import { schemasToDiffInfo } from '../utils/schemaDiffToDiffInfo'
+import type { Table, ColumnWithDiff, DiffInfo } from '../types/migration'
 
 const NODE_TYPES = { tableNode:     TableNode }
 const EDGE_TYPES = { relationship:  RelationshipEdge }
-
-function warningDedupeKey(warning: Warning): string {
-  return [
-    warning.rule,
-    warning.severity,
-    warning.table,
-    warning.column ?? '',
-    warning.message,
-  ].join('::')
-}
-
-function dedupeWarnings(warnings: Warning[]): Warning[] {
-  const seen = new Set<string>()
-  const unique: Warning[] = []
-
-  for (const warning of warnings) {
-    const key = warningDedupeKey(warning)
-    if (seen.has(key)) continue
-    seen.add(key)
-    unique.push(warning)
-  }
-
-  return unique
-}
-
-function mergeScopedWarnings(
-  baseWarnings:   Warning[] | undefined,
-  targetWarnings: Warning[] | undefined,
-  includeTarget:  boolean,
-): Warning[] {
-  const combined = includeTarget
-    ? [...(baseWarnings ?? []), ...(targetWarnings ?? [])]
-    : (baseWarnings ?? [])
-
-  return dedupeWarnings(combined)
-}
-
-function countWarningsByTable(warnings: Warning[]): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const warning of warnings) {
-    counts.set(warning.table, (counts.get(warning.table) ?? 0) + 1)
-  }
-  return counts
-}
 
 const H_GAP     = 80
 const V_GAP     = 80
@@ -191,8 +145,6 @@ function buildNodes(
     const isRemovedTable = diffInfo.removedTables.has(name)
     const addedCols      = diffInfo.addedColumns.get(name)   ?? []
     const removedCols    = diffInfo.removedColumns.get(name) ?? []
-    const addedIdxCols   = diffInfo.addedIndexColumns.get(name)   ?? []
-    const removedIdxCols = diffInfo.removedIndexColumns.get(name) ?? []
 
     const baseColumns: ColumnWithDiff[] = (table?.columns ?? []).map((col) => ({
       ...col,
@@ -206,13 +158,6 @@ function buildNodes(
       }))
 
     const allColumns = [...baseColumns, ...ghostColumns]
-
-    const allIndexes: IndexWithDiff[] = (table?.indexes ?? []).map((idx) => ({
-      ...idx,
-      diffStatus: idx.columns.some((c) => addedIdxCols.includes(c))   ? 'added'
-               : idx.columns.some((c) => removedIdxCols.includes(c))  ? 'removed'
-               : undefined,
-    }))
 
     const fkColNames = fkColumnsMap.get(name) ?? []
     const fkEdgeMap: Record<string, string>  = {}
@@ -249,7 +194,6 @@ function buildNodes(
       data: {
         label:        name,
         columns:      allColumns,
-        indexes:      allIndexes,
         warningCount,
         tableStatus,
         fkColumns:    fkColNames,
@@ -368,6 +312,13 @@ function CanvasInner({ computedNodes, computedEdges, fitEpoch }: CanvasInnerProp
         fitEpoch={fitEpoch}
       />
       <Background color="#30363D" gap={24} size={1} />
+      <MiniMap
+        pannable
+        zoomable
+        nodeColor="#58A6FF"
+        maskColor="rgba(13, 17, 23, 0.65)"
+        className="!bg-[#0D1117] !border !border-[#30363D] !rounded-md"
+      />
       <Controls />
     </ReactFlow>
   )
@@ -393,41 +344,15 @@ export function SchemaCanvas() {
     compareTo,
   } = useSchemaStore()
 
-  const comparePairValid =
-    !!selectedVersion
-    && !!compareTo
-    && compareTo !== selectedVersion
-
-  const { data: detailBase, isPending: loadingBase } = useQuery({
-    queryKey: ['migration', selectedVersion],
-    queryFn:  () => client.getMigrationDetail(selectedVersion!),
-    enabled:  !!selectedVersion,
-  })
-
-  const { data: detailTarget, isPending: loadingTarget } = useQuery({
-    queryKey: ['migration', compareTo],
-    queryFn:  () => client.getMigrationDetail(compareTo!),
-    enabled:  comparePairValid,
-  })
-
-  const scopedWarnings = useMemo(
-    () => mergeScopedWarnings(detailBase?.warnings, detailTarget?.warnings, comparePairValid),
-    [detailBase?.warnings, detailTarget?.warnings, comparePairValid],
-  )
-
-  const activeDetail = comparePairValid ? detailTarget : detailBase
-  const diff = detailBase?.diff
-  const diffInfo = useMemo(() => {
-    if (comparePairValid && detailTarget && detailBase) {
-      return schemasToDiffInfo(detailBase.schema_after.tables, detailTarget.schema_after.tables)
-    }
-    if (!diff) return emptyDiffInfo()
-    return diffInfoFromApi(diff)
-  }, [comparePairValid, detailTarget, detailBase, diff])
-
-  const warningCountByTable = useMemo(() => {
-    return countWarningsByTable(scopedWarnings)
-  }, [scopedWarnings])
+  const {
+    comparePairValid,
+    activeDetail,
+    loadingBase,
+    loadingTarget,
+    loadingBasePrevious,
+    diffInfo,
+    warningCountByTable,
+  } = useSchemaComparisonData()
 
   const { computedNodes, computedEdges } = useMemo(() => {
     if (!activeDetail?.schema_after?.tables) return { computedNodes: [], computedEdges: [] }
@@ -467,7 +392,7 @@ export function SchemaCanvas() {
     return <EmptyState />
   }
 
-  if (loadingBase || (comparePairValid && loadingTarget)) {
+  if (loadingBase || (comparePairValid && (loadingTarget || loadingBasePrevious))) {
     return (
       <div className="flex items-center justify-center h-full text-[#7D8590] text-sm font-mono">
         Loading schemas…

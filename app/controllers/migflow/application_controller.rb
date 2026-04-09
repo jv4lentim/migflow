@@ -25,5 +25,21 @@ module Migflow
     def render_error(message, status: :unprocessable_entity)
       render json: { error: message }, status: status
     end
+
+    def serialize_schema_patches(from_tables:, to_tables:, changed_tables: nil)
+      {
+        schema_patch: Services::SchemaPatchBuilder.call(
+          from_tables: from_tables,
+          to_tables: to_tables,
+          changed_tables: changed_tables,
+          include_unchanged: false
+        ),
+        schema_patch_full: Services::SchemaPatchBuilder.call(
+          from_tables: from_tables,
+          to_tables: to_tables,
+          include_unchanged: true
+        )
+      }
+    end
   end
 end
