@@ -69,3 +69,6 @@ yarn-debug.log*
 /public/uploads
 
 .DS_Store
+
+# Cursor IDE (local rules; do not commit)
+.cursor/
