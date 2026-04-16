@@ -4,7 +4,7 @@ Migration intelligence for Rails teams.
 
 Migflow is a Rails engine that mounts at `/migflow` and gives you a visual timeline, schema diffs, and migration warnings so you can understand migration impact before shipping.
 
-[![CI](https://github.com/joaovalentim/migflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/joaovalentim/migflow/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/joaovalentim/migflow/ci.yml?branch=main&label=CI&style=flat)](https://github.com/joaovalentim/migflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 [![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.1-red)](https://www.ruby-lang.org/)
 [![Rails](https://img.shields.io/badge/Rails-%3E%3D%207.0-cc0000)](https://rubyonrails.org/)
