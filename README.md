@@ -1,43 +1,179 @@
 # Migflow
 
-TODO: Delete this and the text below, and describe your gem
+Migration intelligence for Rails teams.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/migflow`. To experiment with that code, run `bin/console` for an interactive prompt.
+Migflow is a Rails engine that mounts at `/migflow` and gives you a visual timeline, schema diffs, and migration warnings so you can understand migration impact before shipping.
 
-## Installation
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
+[![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.1-red)](https://www.ruby-lang.org/)
+[![Rails](https://img.shields.io/badge/Rails-%3E%3D%207.0-cc0000)](https://rubyonrails.org/)
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+## Table of contents
 
-Install the gem and add to the application's Gemfile by executing:
+- [Why Migflow](#why-migflow)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Install in a Rails app](#install-in-a-rails-app)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [API surface](#api-surface)
+- [Demo and screenshots](#demo-and-screenshots)
+- [Development](#development)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Code of conduct](#code-of-conduct)
+- [License](#license)
 
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+## Why Migflow
+
+- Prevent schema regressions by making migration impact visible.
+- Compare versions to understand exactly what changed in `schema.rb`.
+- Audit migration history with warnings for common risky patterns.
+
+## Features
+
+- Timeline of migrations with version, name, and short summary.
+- Detail view for a migration with schema snapshot and warnings.
+- Schema patch view (focused and full views) powered by diff hunks.
+- Compare mode between two migration versions.
+- Graph-like schema visualization mode and side detail panel.
+
+## Requirements
+
+- Ruby `>= 3.1`
+- Rails `>= 7.0`
+- A Rails app with migration files in `db/migrate`
+- A schema file in `db/schema.rb`
+
+## Install in a Rails app
+
+Add Migflow to your app `Gemfile` (Git source for now):
+
+```ruby
+gem "migflow", git: "https://github.com/jv4lentim/migflow"
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+Then install:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle install
 ```
 
-## Usage
+Mount the engine in your app routes:
 
-TODO: Write usage instructions here
+```ruby
+# config/routes.rb
+mount Migflow::Engine, at: "/migflow"
+```
+
+Open:
+
+```text
+http://localhost:3000/migflow
+```
+
+## Quick start
+
+1. Add and mount Migflow in your Rails app.
+2. Boot your app (`bin/dev` or `bin/rails server`).
+3. Navigate to `/migflow`.
+4. Done!
+
+## Configuration
+
+By default Migflow reads from:
+
+- `db/migrate`
+- `db/schema.rb`
+
+You can override this in an initializer:
+
+```ruby
+# config/initializers/migflow.rb
+Migflow.configure do |config|
+  config.migrations_path = Rails.root.join("db/migrate")
+  config.schema_path = Rails.root.join("db/schema.rb")
+  config.enabled_rules = :all
+end
+```
+
+## API surface
+
+Migflow's frontend consumes these endpoints under `/migflow/api`:
+
+- `GET /migrations` - list migrations for the timeline
+- `GET /migrations/:version` - migration detail with warnings and schema patch
+- `GET /diff?from=:version&to=:version` - comparison diff between two migrations
+
+## Demo and screenshots
+
+Visual demo assets are being prepared as part of the open source roadmap.
+
+Planned demo flow:
+
+- Timeline selection
+- Migration detail with warnings
+- Compare mode
+- Schema diff expansion/collapse
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+Clone and setup:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```bash
+git clone https://github.com/jv4lentim/migflow.git
+cd migflow
+bin/setup
+```
+
+Run quality checks:
+
+```bash
+bundle exec rake test
+bundle exec rubocop
+```
+
+Frontend workspace (`frontend/`) is Vite + React + TypeScript:
+
+```bash
+cd frontend
+yarn install
+yarn run build
+```
+
+## Limitations
+
+- Current docs are still evolving toward a full OSS onboarding experience.
+- CI badges/workflows are being finalized.
+- Demo GIF/screenshots are not yet included in the repository.
+
+## Roadmap
+
+
+Highlights:
+
+- Complete OSS documentation set (`README`, `CONTRIBUTING`, `SECURITY`)
+- Required CI pipeline for backend and frontend
+- Better developer setup and compatibility matrix
+- Product differentiators (risk score, waivers, CI report output)
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/migflow. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/migflow/blob/main/CODE_OF_CONDUCT.md).
+Issues and pull requests are welcome.
+
+For now:
+
+1. Open an issue describing the bug/feature.
+2. Fork the repository and create a branch.
+3. Run local checks before opening your PR.
+
+Formal contribution guidelines will be published in `CONTRIBUTING.md`.
+
+## Code of conduct
+
+This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md).
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Migflow project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/migflow/blob/main/CODE_OF_CONDUCT.md).
+Migflow is licensed under the [MIT License](./LICENSE.txt).
