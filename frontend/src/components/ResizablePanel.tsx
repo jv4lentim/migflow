@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react'
+import { useRef, useCallback, useState } from 'react'
 
 const RAIL_WIDTH = 44
 
@@ -25,22 +25,12 @@ export function ResizablePanel({
   onToggleCollapse,
 }: ResizablePanelProps) {
   const [width, setWidth] = useState(initialWidth)
-  const widthRef = useRef(width)
-  widthRef.current = width
-  const savedExpandedWidth = useRef(initialWidth)
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(0)
 
-  useEffect(() => {
-    if (collapsed) {
-      if (widthRef.current > RAIL_WIDTH) savedExpandedWidth.current = widthRef.current
-      setWidth(RAIL_WIDTH)
-    } else {
-      const w = savedExpandedWidth.current
-      setWidth(Math.min(maxWidth, Math.max(minWidth, w)))
-    }
-  }, [collapsed, minWidth, maxWidth])
+  /** Expanded width stays in state; when collapsed we only render at rail width. */
+  const displayWidth = collapsed ? RAIL_WIDTH : width
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -74,7 +64,7 @@ export function ResizablePanel({
   return (
     <div
       className={`relative shrink-0 flex min-h-0 ${className}`}
-      style={{ width }}
+      style={{ width: displayWidth }}
     >
       {collapsed && onToggleCollapse && (
         <div
