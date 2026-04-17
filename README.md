@@ -1,126 +1,77 @@
 # Migflow
 
-Migration intelligence for Rails teams.
+**Migration intelligence for Rails teams.**
 
-Migflow is a Rails engine that mounts at `/migflow` and gives you a visual timeline, schema diffs, and migration warnings so you can understand migration impact before shipping.
+Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual timeline, schema diffs, and audit warnings — so you can understand migration impact before it reaches production.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/jv4lentim/migflow/ci.yml?branch=main&label=CI&style=flat)](https://github.com/jv4lentim/migflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 [![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.1-red)](https://www.ruby-lang.org/)
 [![Rails](https://img.shields.io/badge/Rails-%3E%3D%207.0-cc0000)](https://rubyonrails.org/)
 
-## Table of contents
+---
 
-- [Why Migflow](#why-migflow)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Install in a Rails app](#install-in-a-rails-app)
-- [Quick start](#quick-start)
-- [Configuration](#configuration)
-- [API surface](#api-surface)
-- [Demo and screenshots](#demo-and-screenshots)
-- [Development](#development)
-- [Limitations](#limitations)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [Code of conduct](#code-of-conduct)
-- [License](#license)
+## What it does
 
-## Why Migflow
-
-- Prevent schema regressions by making migration impact visible.
-- Compare versions to understand exactly what changed in `schema.rb`.
-- Audit migration history with warnings for common risky patterns.
-
-## Features
-
-- Timeline of migrations with version, name, and short summary.
-- Detail view for a migration with schema snapshot and warnings.
-- Schema patch view (focused and full views) powered by diff hunks.
-- Compare mode between two migration versions.
-- Graph-like schema visualization mode and side detail panel.
+- **Timeline** — browse every migration in order, with version, name, and a one-line summary.
+- **Detail view** — inspect raw migration content, schema snapshot, and audit warnings side by side.
+- **Schema diff** — focused and full diff hunks powered by `schema.rb` patches between versions.
+- **Compare mode** — pick any two migration versions and see exactly what changed.
+- **Schema graph** — interactive ERD with tables, columns, foreign keys, and diff highlights.
 
 ## Requirements
 
-- Ruby `>= 3.1`
-- Rails `>= 7.0`
-- A Rails app with migration files in `db/migrate`
-- A schema file in `db/schema.rb`
+- Ruby >= 3.1
+- Rails 7.0 or newer
+- A Rails app with migrations in `db/migrate` and a `db/schema.rb`
 
-## Install in a Rails app
+## Installation
 
-Add Migflow to your app `Gemfile` (Git source for now):
+Add Migflow to your `Gemfile` (Git source until the first RubyGems release):
 
 ```ruby
 gem "migflow", git: "https://github.com/jv4lentim/migflow"
 ```
 
-Then install:
-
 ```bash
 bundle install
 ```
 
-Mount the engine in your app routes:
+Mount the engine in your routes:
 
 ```ruby
 # config/routes.rb
 mount Migflow::Engine, at: "/migflow"
 ```
 
-Open:
-
-```text
-http://localhost:3000/migflow
-```
-
-## Quick start
-
-1. Add and mount Migflow in your Rails app.
-2. Boot your app (`bin/dev` or `bin/rails server`).
-3. Navigate to `/migflow`.
-4. Done!
+Start your app and open [http://localhost:3000/migflow](http://localhost:3000/migflow).
 
 ## Configuration
 
-By default Migflow reads from:
-
-- `db/migrate`
-- `db/schema.rb`
-
-You can override this in an initializer:
+Migflow works out of the box with the Rails conventions (`db/migrate`, `db/schema.rb`). Override either path in an initializer if needed:
 
 ```ruby
 # config/initializers/migflow.rb
 Migflow.configure do |config|
   config.migrations_path = Rails.root.join("db/migrate")
-  config.schema_path = Rails.root.join("db/schema.rb")
-  config.enabled_rules = :all
+  config.schema_path     = Rails.root.join("db/schema.rb")
+  config.enabled_rules   = :all
 end
 ```
 
-## API surface
+## API
 
-Migflow's frontend consumes these endpoints under `/migflow/api`:
+The frontend talks to these JSON endpoints under `/migflow/api`:
 
-- `GET /migrations` - list migrations for the timeline
-- `GET /migrations/:version` - migration detail with warnings and schema patch
-- `GET /diff?from=:version&to=:version` - comparison diff between two migrations
-
-## Demo and screenshots
-
-Visual demo assets are being prepared as part of the open source roadmap.
-
-Planned demo flow:
-
-- Timeline selection
-- Migration detail with warnings
-- Compare mode
-- Schema diff expansion/collapse
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/migrations` | List all migrations for the timeline |
+| `GET` | `/migrations/:version` | Migration detail — warnings and schema patch |
+| `GET` | `/diff?from=:version&to=:version` | Schema diff between two versions |
 
 ## Development
 
-Clone and setup:
+**Prerequisites:** Ruby 3.3, Node 22, Yarn 1.x.
 
 ```bash
 git clone https://github.com/jv4lentim/migflow.git
@@ -128,53 +79,45 @@ cd migflow
 bin/setup
 ```
 
-Run quality checks:
+`bin/setup` installs Ruby and frontend dependencies. After that:
 
 ```bash
+# Run tests
 bundle exec rake test
+
+# Run linter
 bundle exec rubocop
+
+# Build frontend assets
+cd frontend && yarn run build
+
+# Frontend dev server with hot reload (http://localhost:5173)
+cd frontend && yarn dev
 ```
 
-Frontend workspace (`frontend/`) is Vite + React + TypeScript:
+After rebuilding frontend assets, restart your Rails server to pick up the changes.
 
-```bash
-cd frontend
-yarn install
-yarn run build
+**Testing against a local Rails app:**
+
+```ruby
+# In your app's Gemfile:
+gem "migflow", path: "../migflow"
 ```
-
-## Limitations
-
-- Current docs are still evolving toward a full OSS onboarding experience.
-- Gem version badge on RubyGems after the first public release.
-- Demo GIF/screenshots are not yet included in the repository.
-
-## Roadmap
-
-
-Highlights:
-
-- Complete OSS documentation set (`README`, `CONTRIBUTING`, `SECURITY`)
-- Required CI pipeline for backend and frontend
-- Better developer setup and compatibility matrix
-- Product differentiators (risk score, waivers, CI report output)
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome. To contribute:
 
-For now:
+1. Open an issue describing the bug or feature.
+2. Fork the repo and create a branch.
+3. Run `bundle exec rake test` and `bundle exec rubocop` before opening a PR.
 
-1. Open an issue describing the bug/feature.
-2. Fork the repository and create a branch.
-3. Run local checks before opening your PR.
+Full contribution guidelines are coming in `CONTRIBUTING.md`.
 
-Formal contribution guidelines will be published in `CONTRIBUTING.md`.
-
-## Code of conduct
+## Code of Conduct
 
 This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md).
 
 ## License
 
-Migflow is licensed under the [MIT License](./LICENSE.txt).
+Migflow is released under the [MIT License](./LICENSE.txt).

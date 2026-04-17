@@ -1,8 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
-IFS=$'\n\t'
-set -vx
 
+echo "==> Installing Ruby dependencies..."
 bundle install
 
-# Do any other automated setup that you need to do here
+echo "==> Installing frontend dependencies..."
+if ! command -v yarn &> /dev/null; then
+  echo "ERROR: yarn not found. Install it with: npm install -g yarn"
+  exit 1
+fi
+
+cd frontend
+yarn install
+cd ..
+
+echo ""
+echo "==> Setup complete."
+echo ""
+echo "Next steps:"
+echo "  Build frontend:  cd frontend && yarn run build"
+echo "  Run backend tests:  bundle exec rake test"
+echo "  Run linter:  bundle exec rubocop"
+echo ""
+echo "To test in a Rails app:"
+echo "  Add to Gemfile: gem \"migflow\", path: \"../migflow\""
+echo "  Mount in routes: mount Migflow::Engine, at: \"/migflow\""
