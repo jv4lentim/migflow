@@ -46,7 +46,7 @@ jobs:
       - name: Install, lint, test, build
         working-directory: frontend
         run: |
-          npm install
+          npm ci
           npm run lint
           npm test
           npm run build
