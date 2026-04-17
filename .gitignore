@@ -72,3 +72,6 @@ yarn-debug.log*
 
 # Cursor IDE (local rules; do not commit)
 .cursor/
+
+# Claude Code (local rules; do not commit)
+.claude/

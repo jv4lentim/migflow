@@ -92,6 +92,7 @@ GEM
     connection_pool (3.0.2)
     crass (1.0.6)
     date (3.5.1)
+    docile (1.4.1)
     drb (2.2.3)
     erb (6.0.2)
     erubi (1.13.1)
@@ -234,6 +235,12 @@ GEM
       prism (~> 1.7)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
+    simplecov (0.22.0)
+      docile (~> 1.1)
+      simplecov-html (~> 0.11)
+      simplecov_json_formatter (~> 0.1)
+    simplecov-html (0.13.2)
+    simplecov_json_formatter (0.1.4)
     stringio (3.2.0)
     thor (1.5.0)
     timeout (0.6.0)
@@ -267,6 +274,7 @@ DEPENDENCIES
   minitest-reporters (~> 1.7)
   rake (~> 13.0)
   rubocop (~> 1.21)
+  simplecov
 
 BUNDLED WITH
    2.6.2
