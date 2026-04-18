@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.homepage    = "https://github.com/joaovalentim/migflow"
   spec.license     = "MIT"
 
-  spec.required_ruby_version = ">= 3.1"
+  spec.required_ruby_version = ">= 3.2"
 
   spec.metadata["homepage_uri"]    = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage

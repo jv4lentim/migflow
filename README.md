@@ -6,7 +6,7 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 
 [![CI](https://img.shields.io/github/actions/workflow/status/jv4lentim/migflow/ci.yml?branch=main&label=CI&style=flat)](https://github.com/jv4lentim/migflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
-[![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.1-red)](https://www.ruby-lang.org/)
+[![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.2-red)](https://www.ruby-lang.org/)
 [![Rails](https://img.shields.io/badge/Rails-%3E%3D%207.0-cc0000)](https://rubyonrails.org/)
 
 ---
@@ -21,7 +21,7 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 
 ## Requirements
 
-- Ruby >= 3.1
+- Ruby >= 3.2
 - Rails 7.0 or newer
 - A Rails app with migrations in `db/migrate` and a `db/schema.rb`
 
@@ -31,7 +31,6 @@ Tested in CI against every combination below:
 
 |            | Rails 7.0 | Rails 7.1 | Rails 7.2 |
 |------------|:---------:|:---------:|:---------:|
-| Ruby 3.1   | ✅        | ✅        | ✅        |
 | Ruby 3.2   | ✅        | ✅        | ✅        |
 | Ruby 3.3   | ✅        | ✅        | ✅        |
 
