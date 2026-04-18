@@ -25,6 +25,16 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 - Rails 7.0 or newer
 - A Rails app with migrations in `db/migrate` and a `db/schema.rb`
 
+## Compatibility
+
+Tested in CI against every combination below:
+
+|            | Rails 7.0 | Rails 7.1 | Rails 7.2 |
+|------------|:---------:|:---------:|:---------:|
+| Ruby 3.1   | ✅        | ✅        | ✅        |
+| Ruby 3.2   | ✅        | ✅        | ✅        |
+| Ruby 3.3   | ✅        | ✅        | ✅        |
+
 ## Installation
 
 Add Migflow to your `Gemfile` (Git source until the first RubyGems release):
@@ -71,7 +81,7 @@ The frontend talks to these JSON endpoints under `/migflow/api`:
 
 ## Development
 
-**Prerequisites:** Ruby 3.3, Node 22, Yarn 1.x.
+**Prerequisites:** Ruby 3.3, Node 22.
 
 ```bash
 git clone https://github.com/jv4lentim/migflow.git
@@ -83,16 +93,16 @@ bin/setup
 
 ```bash
 # Run tests
-bundle exec rake test
+bundle exec rake spec
 
 # Run linter
 bundle exec rubocop
 
 # Build frontend assets
-cd frontend && yarn run build
+cd frontend && npm run build
 
 # Frontend dev server with hot reload (http://localhost:5173)
-cd frontend && yarn dev
+cd frontend && npm run dev
 ```
 
 After rebuilding frontend assets, restart your Rails server to pick up the changes.
@@ -110,7 +120,7 @@ Issues and pull requests are welcome. To contribute:
 
 1. Open an issue describing the bug or feature.
 2. Fork the repo and create a branch.
-3. Run `bundle exec rake test` and `bundle exec rubocop` before opening a PR.
+3. Run `bundle exec rake spec` and `bundle exec rubocop` before opening a PR.
 
 Full contribution guidelines are coming in `CONTRIBUTING.md`.
 
