@@ -245,7 +245,7 @@ PLATFORMS
 
 DEPENDENCIES
   migflow!
-  rails (~> 7.0.0)
+  rails (>= 7.0)
   rake (~> 13.0)
   rspec-core (~> 3.13)
   rspec-expectations (~> 3.13)

@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in migflow.gemspec
 gemspec
 
-rails_version = ENV["RAILS_VERSION"]
+rails_version = ENV.fetch("RAILS_VERSION", nil)
 gem "rails", rails_version ? "~> #{rails_version}.0" : ">= 7.0"
 
 gem "rake", "~> 13.0"
