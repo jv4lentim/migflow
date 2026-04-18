@@ -34,3 +34,11 @@ Naming/PredicatePrefix:
 
 Naming/PredicateMethod:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+
+Layout/LineLength:
+  Exclude:
+    - "spec/**/*"
