@@ -1,8 +1,18 @@
+export type RiskLevel = 'safe' | 'low' | 'medium' | 'high'
+
+export interface RiskFactor {
+  rule: string
+  message: string
+  weight: number
+}
+
 export interface Migration {
   version: string
   name: string
   filename: string
   summary: string
+  risk_score: number
+  risk_level: RiskLevel
 }
 
 export interface Column {
@@ -41,6 +51,7 @@ export interface MigrationDetail extends Migration {
   schema_patch: string
   schema_patch_full: string
   warnings: Warning[]
+  risk_factors: RiskFactor[]
 }
 
 export interface Warning {

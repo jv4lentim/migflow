@@ -17,6 +17,7 @@ require "migflow/services/snapshot_builder"
 require "migflow/services/schema_patch_builder"
 require "migflow/services/touched_tables_from_migration"
 require "migflow/services/scoped_migration_warnings"
+require "migflow/services/risk_scorer"
 
 module Migflow
   class << self

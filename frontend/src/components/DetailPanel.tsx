@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { client } from '../api/client'
 import { useSchemaStore } from '../store/useSchemaStore'
 import type { MigrationDetail, Warning } from '../types/migration'
+import { RiskCard } from './RiskBadge'
 
 const SEVERITY_COLORS = {
   error:   { bg: '#2D1B1B', border: '#F85149', badge: 'bg-[#F85149]', text: 'text-[#F85149]' },
@@ -24,16 +25,16 @@ function WarningItem({ warning }: WarningItemProps) {
       className="rounded p-3 mb-2 border text-xs"
       style={{ backgroundColor: colors.bg, borderColor: colors.border }}
     >
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`${colors.badge} text-white text-[10px] font-bold px-1.5 py-0.5 rounded`}>
+      <div className="flex items-center gap-2 mb-1 min-w-0">
+        <span className={`${colors.badge} text-white text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0`}>
           {warning.severity.toUpperCase()}
         </span>
-        <span className="font-mono text-[#7D8590]">{warning.rule}</span>
+        <span className="font-mono text-[#7D8590] truncate min-w-0">{warning.rule}</span>
       </div>
       <p className={`${colors.text} font-medium`}>{warning.message}</p>
       {warning.column && (
-        <p className="text-[#7D8590] mt-1">
-          <span className="font-mono">{warning.table}.{warning.column}</span>
+        <p className="text-[#7D8590] mt-1 truncate font-mono">
+          {warning.table}.{warning.column}
         </p>
       )}
     </div>
@@ -156,6 +157,12 @@ function MigrationPane({ detail, roleLabel, activeTab, onTabChange }: MigrationP
         <p className="text-xs font-mono text-[#7D8590] truncate">{detail.version}</p>
       </div>
 
+      <RiskCard
+        score={detail.risk_score}
+        level={detail.risk_level}
+        factors={detail.risk_factors}
+      />
+
       <div className="flex border-b border-[#30363D] shrink-0">
         {(['code', 'warnings'] as Tab[]).map((tab) => (
           <button
@@ -187,9 +194,36 @@ function MigrationPane({ detail, roleLabel, activeTab, onTabChange }: MigrationP
   )
 }
 
+const MIN_SPLIT = 20
+const MAX_SPLIT = 80
+
 export function DetailPanel() {
   const [baseTab, setBaseTab] = useState<Tab>('code')
   const [targetTab, setTargetTab] = useState<Tab>('code')
+  const [splitPct, setSplitPct] = useState(50)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+
+  const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true
+    e.preventDefault()
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const pct = ((ev.clientY - rect.top) / rect.height) * 100
+      setSplitPct(Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, pct)))
+    }
+
+    const onMouseUp = () => {
+      dragging.current = false
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [])
   const { selectedVersion, compareTo } = useSchemaStore()
 
   const compareSplit =
@@ -233,8 +267,8 @@ export function DetailPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 flex flex-col min-h-0 border-b border-[#30363D]">
+    <div ref={containerRef} className="flex flex-col h-full min-h-0">
+      <div className="flex flex-col min-h-0 overflow-hidden" style={{ height: `${splitPct}%` }}>
         <MigrationPane
           detail={baseDetail}
           roleLabel="Base"
@@ -242,7 +276,15 @@ export function DetailPanel() {
           onTabChange={setBaseTab}
         />
       </div>
-      <div className="flex-1 flex flex-col min-h-0 min-h-[140px]">
+
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        onMouseDown={onDividerMouseDown}
+        className="h-1 shrink-0 cursor-row-resize bg-[#30363D] hover:bg-[#58A6FF] transition-colors duration-150 select-none"
+      />
+
+      <div className="flex flex-col min-h-0 overflow-hidden flex-1">
         {loadingTarget || !targetDetail
           ? (
               <div className="flex flex-col h-full min-h-0">

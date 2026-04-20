@@ -5,7 +5,7 @@ module Migflow
     class MigrationsController < ApplicationController
       def index
         migrations = Parsers::MigrationParser.call(migrations_path: migrations_path)
-        render_json(migrations: migrations.map { |m| serialize_summary(m) })
+        render_json(migrations: migrations.map { |m| serialize_summary(m, migrations) })
       end
 
       def show
@@ -16,9 +16,10 @@ module Migflow
 
         result   = Services::SnapshotBuilder.call(migrations: migrations, up_to_version: params[:id])
         snapshot = snapshot_model_from(result[:schema_after], migration[:version])
-        warnings = Services::ScopedMigrationWarnings.call(snapshot: snapshot, migration: migration)
+        warnings = Services::ScopedMigrationWarnings.call(snapshot: snapshot, migration: migration, diff: result[:diff])
+        risk     = Services::RiskScorer.new.call(warnings)
 
-        render_json(migration: serialize_detail(migration, result, warnings))
+        render_json(migration: serialize_detail(migration, result, warnings, risk))
       end
 
       private
@@ -32,7 +33,8 @@ module Migflow
         )
       end
 
-      def serialize_summary(migration)
+      def serialize_summary(migration, all_migrations)
+        risk = compute_risk(migration, all_migrations)
         {
           version: migration[:version],
           name: migration[:name],
@@ -40,13 +42,15 @@ module Migflow
           summary: Services::MigrationSummaryBuilder.call(
             raw_content: migration[:raw_content],
             version: migration[:version]
-          )
+          ),
+          risk_score: risk[:score],
+          risk_level: risk[:level]
         }
       end
 
-      def serialize_detail(migration, snapshot_result, warnings)
+      def serialize_detail(migration, snapshot_result, warnings, risk)
         schema_before_tables = snapshot_result[:schema_before][:tables]
-        schema_after_tables = snapshot_result[:schema_after][:tables]
+        schema_after_tables  = snapshot_result[:schema_after][:tables]
         diff = snapshot_result[:diff]
         changed_tables = (
           diff[:added_tables] +
@@ -65,7 +69,10 @@ module Migflow
             to_tables: schema_after_tables,
             changed_tables: changed_tables
           ),
-          warnings: warnings.map { |w| serialize_warning(w) }
+          warnings: warnings.map { |w| serialize_warning(w) },
+          risk_score: risk[:score],
+          risk_level: risk[:level],
+          risk_factors: risk[:factors]
         }
       end
 
@@ -77,6 +84,13 @@ module Migflow
           column: warning.column,
           message: warning.message
         }
+      end
+
+      def compute_risk(migration, all_migrations)
+        result   = Services::SnapshotBuilder.call(migrations: all_migrations, up_to_version: migration[:version])
+        snapshot = snapshot_model_from(result[:schema_after], migration[:version])
+        warnings = Services::ScopedMigrationWarnings.call(snapshot: snapshot, migration: migration, diff: result[:diff])
+        Services::RiskScorer.new.call(warnings)
       end
     end
   end

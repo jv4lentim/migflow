@@ -33,6 +33,17 @@ RSpec.describe "Analyzer Rules" do
 
       expect(described_class.new.call(tables)).to be_empty
     end
+
+    it "passes when foreign key column is covered by a composite index" do
+      tables = {
+        "posts" => {
+          columns: [{ name: "user_id", type: "integer", null: false, default: nil }],
+          indexes: [{ name: "idx_posts_user_status", columns: %w[user_id status], unique: false }]
+        }
+      }
+
+      expect(described_class.new.call(tables)).to be_empty
+    end
   end
 
   describe Migflow::Analyzers::Rules::StringWithoutLimitRule do
@@ -80,12 +91,70 @@ RSpec.describe "Analyzer Rules" do
       expect(warnings.first.severity).to eq(:warning)
     end
 
+    it "warns when only created_at is present" do
+      tables = {
+        "posts" => {
+          columns: [
+            { name: "id",         type: "bigint",   null: false, default: nil },
+            { name: "created_at", type: "datetime", null: false, default: nil }
+          ],
+          indexes: []
+        }
+      }
+
+      expect(described_class.new.call(tables)).not_to be_empty
+    end
+
+    it "warns when only updated_at is present" do
+      tables = {
+        "posts" => {
+          columns: [
+            { name: "id",         type: "bigint",   null: false, default: nil },
+            { name: "updated_at", type: "datetime", null: false, default: nil }
+          ],
+          indexes: []
+        }
+      }
+
+      expect(described_class.new.call(tables)).not_to be_empty
+    end
+
     it "ignores join tables" do
       tables = {
         "post_tags" => {
           columns: [
             { name: "post_id", type: "integer", null: false, default: nil },
             { name: "tag_id",  type: "integer", null: false, default: nil }
+          ],
+          indexes: []
+        }
+      }
+
+      expect(described_class.new.call(tables)).to be_empty
+    end
+
+    it "does not ignore a 3-column table that has a non-_id column" do
+      tables = {
+        "memberships" => {
+          columns: [
+            { name: "user_id",  type: "integer", null: false, default: nil },
+            { name: "group_id", type: "integer", null: false, default: nil },
+            { name: "role",     type: "string",  null: false, default: nil }
+          ],
+          indexes: []
+        }
+      }
+
+      expect(described_class.new.call(tables)).not_to be_empty
+    end
+
+    it "ignores a 3-column join table where all columns end in _id" do
+      tables = {
+        "a_b_c" => {
+          columns: [
+            { name: "a_id", type: "integer", null: false, default: nil },
+            { name: "b_id", type: "integer", null: false, default: nil },
+            { name: "c_id", type: "integer", null: false, default: nil }
           ],
           indexes: []
         }
@@ -139,6 +208,17 @@ RSpec.describe "Analyzer Rules" do
     it "produces no warnings for safe migrations" do
       migrations = [{ raw_content: "add_column :users, :bio, :text", filename: "test.rb" }]
       expect(described_class.new.call_with_migrations(migrations)).to be_empty
+    end
+
+    it "generates one warning per dangerous operation when multiple are present" do
+      migrations = [{
+        raw_content: "remove_column :users, :email\ndrop_table :old_sessions",
+        filename: "20240101_test.rb"
+      }]
+      warnings = described_class.new.call_with_migrations(migrations)
+
+      rules = warnings.map(&:rule)
+      expect(rules.count("dangerous_migration_rule")).to eq(2)
     end
   end
 

@@ -65,13 +65,63 @@ RSpec.describe "API contract" do
         }
       }
 
-      payload = controller.send(:serialize_detail, migration, snapshot_result, [])
+      risk = { score: 0, level: "safe", factors: [] }
+      payload = controller.send(:serialize_detail, migration, snapshot_result, [], risk)
 
       expect(payload[:version]).to eq("20250000000002")
       expect(payload[:name]).to eq("Add title to events")
       expect(payload[:schema_patch]).to include("+  t.string \"title\"")
       expect(payload[:schema_patch_full]).to include("create_table \"events\" do |t|")
       expect(payload[:schema_after][:tables]).to eq({ "events" => table_with_columns(%w[id title]) })
+    end
+
+    it "serializes risk fields into migration detail" do
+      controller = described_class.new
+      migration = { version: "20250000000002", name: "Drop users", raw_content: "drop_table :users" }
+      snapshot_result = {
+        schema_before: { tables: {} },
+        schema_after: { tables: {} },
+        diff: { added_tables: [], removed_tables: ["users"], modified_tables: {} }
+      }
+      risk = {
+        score: 40,
+        level: "medium",
+        factors: [{ rule: "dangerous_migration_rule", message: "Drops a table", weight: 40 }]
+      }
+
+      payload = controller.send(:serialize_detail, migration, snapshot_result, [], risk)
+
+      expect(payload[:risk_score]).to eq(40)
+      expect(payload[:risk_level]).to eq("medium")
+      expect(payload[:risk_factors]).to eq([{ rule: "dangerous_migration_rule", message: "Drops a table", weight: 40 }])
+    end
+
+    it "serializes warnings into migration detail" do
+      controller = described_class.new
+      migration = { version: "20250000000002", name: "Add col", raw_content: "" }
+      snapshot_result = {
+        schema_before: { tables: {} },
+        schema_after: { tables: {} },
+        diff: { added_tables: [], removed_tables: [], modified_tables: {} }
+      }
+      warning = Migflow::Models::Warning.new(
+        rule: "missing_index_rule",
+        severity: :warning,
+        table: "users",
+        column: "account_id",
+        message: "Column 'account_id' looks like a foreign key but has no index"
+      )
+
+      payload = controller.send(:serialize_detail, migration, snapshot_result, [warning], { score: 15, level: "low", factors: [] })
+
+      expect(payload[:warnings].size).to eq(1)
+      expect(payload[:warnings].first).to eq(
+        rule: "missing_index_rule",
+        severity: :warning,
+        table: "users",
+        column: "account_id",
+        message: "Column 'account_id' looks like a foreign key but has no index"
+      )
     end
   end
 end

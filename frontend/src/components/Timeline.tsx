@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { client } from '../api/client'
 import { useSchemaStore } from '../store/useSchemaStore'
 import type { Migration } from '../types/migration'
+import { RiskBadge } from './RiskBadge'
 
 const MIGRATION_COLORS: Record<string, string> = {
   create: '#58A6FF',
@@ -69,7 +70,10 @@ function MigrationItem({ migration, isSelected, onSelect }: MigrationItemProps) 
           {formatVersion(migration.version)}
         </p>
         <p className="text-sm text-[#E6EDF3] truncate mt-0.5">{migration.name}</p>
-        <p className="text-xs text-[#7D8590] truncate mt-0.5">{migration.summary}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <RiskBadge score={migration.risk_score} level={migration.risk_level} compact />
+          <p className="text-xs text-[#7D8590] truncate">{migration.summary}</p>
+        </div>
       </div>
     </button>
   )
