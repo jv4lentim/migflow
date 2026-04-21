@@ -46,6 +46,9 @@ RSpec.describe "API contract" do
   end
 
   describe Migflow::Api::MigrationsController do
+    before { Migflow.configuration.expose_raw_content = true }
+    after  { Migflow.configuration.expose_raw_content = true }
+
     it "serializes migration detail including schema patches" do
       controller = described_class.new
       migration = {
@@ -122,6 +125,27 @@ RSpec.describe "API contract" do
         column: "account_id",
         message: "Column 'account_id' looks like a foreign key but has no index"
       )
+    end
+
+    context "raw_content exposure" do
+      let(:controller) { described_class.new }
+      let(:migration)  { { version: "20250000000001", name: "Create users", raw_content: "create_table :users" } }
+      let(:empty_snapshot) do
+        { schema_before: { tables: {} }, schema_after: { tables: {} },
+          diff: { added_tables: [], removed_tables: [], modified_tables: {} } }
+      end
+      let(:safe_risk) { { score: 0, level: "safe", factors: [] } }
+
+      it "includes raw_content by default (expose_raw_content: true)" do
+        payload = controller.send(:serialize_detail, migration, empty_snapshot, [], safe_risk)
+        expect(payload[:raw_content]).to eq("create_table :users")
+      end
+
+      it "omits raw_content when expose_raw_content is false" do
+        Migflow.configuration.expose_raw_content = false
+        payload = controller.send(:serialize_detail, migration, empty_snapshot, [], safe_risk)
+        expect(payload[:raw_content]).to be_nil
+      end
     end
   end
 end

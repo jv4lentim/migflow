@@ -13,6 +13,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 require "pathname"
 require "migflow/version"
+require "migflow/configuration"
 require "migflow/models/warning"
 require "migflow/models/migration_snapshot"
 require "migflow/models/schema_diff"

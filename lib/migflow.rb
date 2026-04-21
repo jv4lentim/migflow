@@ -18,15 +18,3 @@ require "migflow/services/schema_patch_builder"
 require "migflow/services/touched_tables_from_migration"
 require "migflow/services/scoped_migration_warnings"
 require "migflow/services/risk_scorer"
-
-module Migflow
-  class << self
-    def configuration
-      @configuration ||= Configuration.new
-    end
-
-    def configure
-      yield configuration
-    end
-  end
-end

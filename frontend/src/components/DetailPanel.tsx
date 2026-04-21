@@ -53,13 +53,11 @@ const TOKENS: Token[] = [
   { pattern: /:[a-zA-Z_]\w*/,                                                       color: '#79B8FF' },
 ]
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
+type TokenSegment = { text: string; color?: string }
 
-function highlightLine(line: string): string {
-  let result  = ''
-  let rest    = line
+function tokenizeLine(line: string): TokenSegment[] {
+  const segments: TokenSegment[] = []
+  let rest = line
 
   while (rest.length > 0) {
     let earliest: { index: number; match: string; color: string } | null = null
@@ -72,28 +70,41 @@ function highlightLine(line: string): string {
     }
 
     if (!earliest) {
-      result += escapeHtml(rest)
+      segments.push({ text: rest })
       break
     }
 
-    result += escapeHtml(rest.slice(0, earliest.index))
-    result += `<span style="color:${earliest.color}">${escapeHtml(earliest.match)}</span>`
+    if (earliest.index > 0) segments.push({ text: rest.slice(0, earliest.index) })
+    segments.push({ text: earliest.match, color: earliest.color })
     rest = rest.slice(earliest.index + earliest.match.length)
   }
 
-  return result
+  return segments
 }
 
-function highlightCode(raw: string): string {
-  return raw.split('\n').map(highlightLine).join('\n')
-}
+function CodeTab({ rawContent }: { rawContent: string | null }) {
+  if (!rawContent) {
+    return (
+      <pre className="text-xs font-mono text-[#E6EDF3] p-3 overflow-auto h-full min-h-0 leading-5 whitespace-pre-wrap opacity-50">
+        Raw content not available.
+      </pre>
+    )
+  }
 
-function CodeTab({ rawContent }: { rawContent: string }) {
+  const lines = rawContent.split('\n')
   return (
-    <pre
-      className="text-xs font-mono text-[#E6EDF3] p-3 overflow-auto h-full min-h-0 leading-5 whitespace-pre-wrap"
-      dangerouslySetInnerHTML={{ __html: highlightCode(rawContent) }}
-    />
+    <pre className="text-xs font-mono text-[#E6EDF3] p-3 overflow-auto h-full min-h-0 leading-5 whitespace-pre-wrap">
+      {lines.map((line, lineIdx) => (
+        <span key={lineIdx}>
+          {tokenizeLine(line).map((seg, segIdx) =>
+            seg.color
+              ? <span key={segIdx} style={{ color: seg.color }}>{seg.text}</span>
+              : seg.text
+          )}
+          {lineIdx < lines.length - 1 ? '\n' : null}
+        </span>
+      ))}
+    </pre>
   )
 }
 

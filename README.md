@@ -18,6 +18,7 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 - **Schema diff** — focused and full diff hunks powered by `schema.rb` patches between versions.
 - **Compare mode** — pick any two migration versions and see exactly what changed.
 - **Schema graph** — interactive ERD with tables, columns, foreign keys, and diff highlights.
+- **CI report** — generate a Markdown or JSON report of all migrations and gate your pipeline on risk score.
 
 ## Requirements
 
@@ -29,10 +30,12 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 
 Tested in CI against every combination below:
 
-|            | Rails 7.0 | Rails 7.1 | Rails 7.2 |
-|------------|:---------:|:---------:|:---------:|
-| Ruby 3.2   | ✅        | ✅        | ✅        |
-| Ruby 3.3   | ✅        | ✅        | ✅        |
+|            | Rails 7.0 | Rails 7.1 | Rails 7.2 | Rails 8.1 |
+|------------|:---------:|:---------:|:---------:|:---------:|
+| Ruby 3.2   | ✅        | ✅        | ✅        | ✅        |
+| Ruby 3.3   | ✅        | ✅        | ✅        | ✅        |
+| Ruby 3.4   | ✅        | ✅        | ✅        | ✅        |
+| Ruby 4.0   | ✅        | ✅        | ✅        | ✅        |
 
 ## Installation
 
@@ -57,14 +60,48 @@ Start your app and open [http://localhost:3000/migflow](http://localhost:3000/mi
 
 ## Configuration
 
-Migflow works out of the box with the Rails conventions (`db/migrate`, `db/schema.rb`). Override either path in an initializer if needed:
+All options are set in an initializer:
 
 ```ruby
 # config/initializers/migflow.rb
 Migflow.configure do |config|
-  config.migrations_path = Rails.root.join("db/migrate")
-  config.schema_path     = Rails.root.join("db/schema.rb")
-  config.enabled_rules   = :all
+  # ...
+end
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `migrations_path` | `db/migrate` | Path to the migrations directory |
+| `schema_path` | `db/schema.rb` | Path to the schema file |
+| `enabled_rules` | `:all` | Audit rules to run. Pass an array of rule name symbols to enable a subset, or `:all` to run every rule |
+| `expose_raw_content` | `true` | Whether to include the migration source code in the API response. Set to `false` to hide it |
+| `parent_controller` | `"ActionController::Base"` | Controller class Migflow inherits from. Set to your app's `ApplicationController` to inherit authentication helpers |
+| `authentication_hook` | `nil` | A lambda run as a `before_action` on every Migflow request. Use it to enforce authentication |
+| `unauthenticated_redirect` | `nil` | A lambda returning the path to redirect to when authentication fails. Required when `authentication_hook` is set, because host app route helpers must be accessed via `main_app.<helper>` inside a mounted engine |
+
+### Authentication
+
+Migflow has no authentication out of the box. To protect the dashboard, set `parent_controller` to inherit your app's auth helpers, provide an `authentication_hook` to enforce the check, and set `unauthenticated_redirect` to tell Migflow where to send unauthenticated requests.
+
+**Rails 8 built-in Authentication**
+
+```ruby
+Migflow.configure do |config|
+  config.parent_controller        = "ApplicationController"
+  config.authentication_hook      = -> { require_authentication }
+  config.unauthenticated_redirect = -> { main_app.new_session_path }
+end
+```
+
+**Devise**
+
+```ruby
+Migflow.configure do |config|
+  config.parent_controller        = "ApplicationController"
+  config.authentication_hook      = -> { authenticate_admin! }
+  config.unauthenticated_redirect = -> { main_app.new_admin_session_path }
 end
 ```
 
@@ -77,6 +114,41 @@ The frontend talks to these JSON endpoints under `/migflow/api`:
 | `GET` | `/migrations` | List all migrations for the timeline |
 | `GET` | `/migrations/:version` | Migration detail — warnings and schema patch |
 | `GET` | `/diff?from=:version&to=:version` | Schema diff between two versions |
+
+## CI report
+
+Run the analysis from the command line without starting a server:
+
+```bash
+# Markdown summary (default)
+bundle exec rails migflow:report
+
+# JSON output for downstream tooling
+bundle exec rails migflow:report FORMAT=json
+
+# Gate: exit 1 if any migration has risk level high or above
+bundle exec rails migflow:report FAIL_ON=high
+
+# Gate: exit 1 if any migration scores 40 or above
+bundle exec rails migflow:report FAIL_ON=40
+
+# Write to a file instead of stdout
+bundle exec rails migflow:report FORMAT=json OUTPUT=migflow-report.json
+```
+
+`FAIL_ON` accepts a level name (`low`, `medium`, `high`) or any integer score. Level names map to their minimum boundary (`high` → 71, `medium` → 31, `low` → 1), so `FAIL_ON=medium` catches medium **and** high migrations.
+
+### GitHub Actions
+
+```yaml
+- name: Migration analysis summary
+  run: bundle exec rails migflow:report FORMAT=markdown >> $GITHUB_STEP_SUMMARY
+
+- name: Gate on high risk
+  run: bundle exec rails migflow:report FAIL_ON=high
+```
+
+A ready-made workflow that triggers on pull requests touching `db/migrate/` is included at `.github/workflows/ci-report.yml`.
 
 ## Development
 

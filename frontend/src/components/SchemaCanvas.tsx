@@ -328,7 +328,7 @@ function EmptyState({ message }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-[#7D8590] px-6 text-center">
       <p className="text-4xl mb-4">⬡</p>
-      <p className="text-sm max-w-sm">
+      <p className="text-sm max-w-sm font-mono">
         {message ?? 'Select a migration from the timeline'}
       </p>
     </div>

@@ -23,7 +23,7 @@ function Layout() {
     <div className="flex flex-col h-screen bg-[#0D1117] text-[#E6EDF3] overflow-hidden">
       <header className="flex items-center gap-3 px-5 h-12 border-b border-[#30363D] shrink-0">
         <span className="text-[#58A6FF] font-mono font-semibold tracking-wider text-sm">Migflow</span>
-        <span className="text-[#7D8590] text-xs font-mono">migration history & audit</span>
+        <span className="text-[#7D8590] text-xs font-mono">migration intelligence for Rails</span>
       </header>
 
       <div className="flex flex-1 min-h-0">

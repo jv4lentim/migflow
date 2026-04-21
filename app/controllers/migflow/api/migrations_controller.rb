@@ -61,7 +61,7 @@ module Migflow
         {
           version: migration[:version],
           name: migration[:name],
-          raw_content: migration[:raw_content],
+          raw_content: Migflow.configuration.expose_raw_content ? migration[:raw_content] : nil,
           schema_after: { tables: schema_after_tables },
           diff: diff,
           **serialize_schema_patches(

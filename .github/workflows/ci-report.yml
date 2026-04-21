@@ -1,0 +1,27 @@
+name: Migflow CI Report
+
+on:
+  pull_request:
+    paths:
+      - "db/migrate/**"
+
+permissions:
+  contents: read
+
+jobs:
+  migflow-report:
+    name: Migration analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Generate report summary
+        run: bundle exec rails migflow:report FORMAT=markdown >> $GITHUB_STEP_SUMMARY
+
+      - name: Gate — fail on high risk
+        run: bundle exec rails migflow:report FAIL_ON=high

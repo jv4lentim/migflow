@@ -70,9 +70,8 @@ function MigrationItem({ migration, isSelected, onSelect }: MigrationItemProps) 
           {formatVersion(migration.version)}
         </p>
         <p className="text-sm text-[#E6EDF3] truncate mt-0.5">{migration.name}</p>
-        <div className="flex items-center gap-1.5 mt-0.5">
+        <div className="mt-0.5">
           <RiskBadge score={migration.risk_score} level={migration.risk_level} compact />
-          <p className="text-xs text-[#7D8590] truncate">{migration.summary}</p>
         </div>
       </div>
     </button>

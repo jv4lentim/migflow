@@ -21,7 +21,7 @@ describe('App', () => {
   it('renders the header with Migflow branding', () => {
     render(<App />)
     expect(screen.getByText('Migflow')).toBeInTheDocument()
-    expect(screen.getByText('migration history & audit')).toBeInTheDocument()
+    expect(screen.getByText('migration intelligence for Rails')).toBeInTheDocument()
   })
 
   it('does not render the detail panel when no version is selected', () => {

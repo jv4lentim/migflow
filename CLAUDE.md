@@ -102,8 +102,8 @@ Always run the relevant checks after writing or modifying code — do not report
 
 
 - **Backend change:** `bundle exec rspec` then `bundle exec rubocop`
-- **Frontend change:** `npm test` then `npm run lint`
-- **Both touched:** run all four
+- **Frontend change:** `npm test` then `npm run lint` then `npm run build`
+- **Both touched:** run all five
 
 If any check fails, fix it before finishing.
 

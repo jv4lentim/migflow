@@ -45,7 +45,7 @@ export interface MigrationDiff {
 }
 
 export interface MigrationDetail extends Migration {
-  raw_content: string
+  raw_content: string | null
   schema_after: Schema
   diff: MigrationDiff
   schema_patch: string
