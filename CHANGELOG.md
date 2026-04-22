@@ -7,10 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Fixed
-- Infinite "Loading schemas…" spinner in Flow and Schema views caused by `loadingBasePrevious` blocking rendering even when the previous-migration query was disabled or optional ([#schema-loading])
-
 ## [0.2.0] - 2026-04-22
+
+### Fixed
+- Infinite "Loading schemas…" spinner in Flow and Schema views caused by `loadingBasePrevious` blocking rendering even when the previous-migration query was disabled or optional
 
 ### Added
 - **Risk score** — every migration receives a numeric score (0–100) and a level (safe / low / medium / high) derived from six audit rules, displayed in the detail panel and exposed in the API
