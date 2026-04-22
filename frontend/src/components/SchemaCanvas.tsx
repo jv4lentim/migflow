@@ -349,7 +349,6 @@ export function SchemaCanvas() {
     activeDetail,
     loadingBase,
     loadingTarget,
-    loadingBasePrevious,
     diffInfo,
     warningCountByTable,
   } = useSchemaComparisonData()
@@ -392,7 +391,7 @@ export function SchemaCanvas() {
     return <EmptyState />
   }
 
-  if (loadingBase || (comparePairValid && (loadingTarget || loadingBasePrevious))) {
+  if (loadingBase || (comparePairValid && loadingTarget)) {
     return (
       <div className="flex items-center justify-center h-full text-[#7D8590] text-sm font-mono">
         Loading schemas…

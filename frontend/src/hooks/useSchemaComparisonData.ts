@@ -43,7 +43,7 @@ export function useSchemaComparisonData() {
     enabled:  comparePairValid,
   })
 
-  const { data: detailBasePrevious, isPending: loadingBasePrevious } = useQuery({
+  const { data: detailBasePrevious } = useQuery({
     queryKey: ['migration', basePreviousVersion],
     queryFn: () => client.getMigrationDetail(basePreviousVersion!),
     enabled: !!selectedVersion && !!basePreviousVersion,
@@ -87,7 +87,6 @@ export function useSchemaComparisonData() {
     detailBasePrevious,
     loadingBase,
     loadingTarget,
-    loadingBasePrevious,
     loadingCompareDiff,
     activeDetail,
     diffInfo,

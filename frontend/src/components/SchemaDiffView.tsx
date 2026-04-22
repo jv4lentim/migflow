@@ -18,7 +18,6 @@ export function SchemaDiffView() {
     comparePairValid,
     loadingBase,
     loadingTarget,
-    loadingBasePrevious,
     activeDetail,
     compareDiff,
     loadingCompareDiff,
@@ -51,8 +50,7 @@ export function SchemaDiffView() {
     return <EmptyState message="Select a migration from the timeline" />
   }
 
-  const loadingBaseOnlyPrevious = !comparePairValid && !!selectedVersion && loadingBasePrevious
-  if (loadingBase || loadingBaseOnlyPrevious || (comparePairValid && (loadingTarget || loadingCompareDiff))) {
+  if (loadingBase || (comparePairValid && (loadingTarget || loadingCompareDiff))) {
     return (
       <div className="flex items-center justify-center h-full text-[#7D8590] text-sm font-mono">
         Loading schemas…
