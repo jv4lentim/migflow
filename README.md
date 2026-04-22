@@ -187,15 +187,28 @@ After rebuilding frontend assets, restart your Rails server to pick up the chang
 gem "migflow", path: "../migflow"
 ```
 
+## Limitations
+
+- **Read-only.** Migflow only reads `db/migrate/` and `db/schema.rb` — it never runs migrations or writes to the database.
+- **`schema.rb` required.** Projects using `structure.sql` are not supported yet.
+- **Regex-based DSL parsing.** `SnapshotBuilder` replays migration DSL calls with a regex scanner. Highly dynamic migrations (metaprogramming, loops, `execute` with raw SQL) may produce incomplete snapshots.
+- **No authentication out of the box.** See [Authentication](#authentication) to protect the dashboard before deploying to a shared environment.
+- **Single-app only.** There is no support for multi-database setups or comparing migrations across separate Rails apps.
+
+## Roadmap
+
+Planned in rough priority order:
+
+- [ ] `structure.sql` support
+- [ ] Baseline / waiver system — suppress known warnings explicitly and traceably
+- [ ] Cross-branch comparison — diff migrations between two git branches without switching
+- [ ] RubyGems release
+
+Have an idea? [Open a feature request](https://github.com/jv4lentim/migflow/issues/new?template=feature_request.yml).
+
 ## Contributing
 
-Issues and pull requests are welcome. To contribute:
-
-1. Open an issue describing the bug or feature.
-2. Fork the repo and create a branch.
-3. Run `bundle exec rake spec` and `bundle exec rubocop` before opening a PR.
-
-Full contribution guidelines are coming in `CONTRIBUTING.md`.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 ## Code of Conduct
 
