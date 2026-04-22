@@ -9,6 +9,8 @@ Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual
 [![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.2-red)](https://www.ruby-lang.org/)
 [![Rails](https://img.shields.io/badge/Rails-%3E%3D%207.0-cc0000)](https://rubyonrails.org/)
 
+<img width="1281" height="484" alt="Kapture 2026-04-22 at 12 47 11" src="https://github.com/user-attachments/assets/25d10fb2-06c9-4476-92e8-bf77986948ed" />
+
 ---
 
 ## What it does
