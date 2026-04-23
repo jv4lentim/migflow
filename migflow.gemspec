@@ -9,13 +9,13 @@ Gem::Specification.new do |spec|
   spec.email       = ["joaovictorvalentim@gmail.com"]
   spec.summary     = "Visual migration history and audit panel for Rails apps"
   spec.description = "Mount /migflow in any Rails app to visualize, diff and audit your migration history"
-  spec.homepage    = "https://github.com/joaovalentim/migflow"
+  spec.homepage    = "https://github.com/jv4lentim/migflow"
   spec.license     = "MIT"
 
   spec.required_ruby_version = ">= 3.2"
 
   spec.metadata["homepage_uri"]    = spec.homepage
-  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/main"
   spec.metadata["changelog_uri"]   = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata["rubygems_mfa_required"] = "true"
 
@@ -29,5 +29,5 @@ Gem::Specification.new do |spec|
 
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "rails", ">= 7.0"
+  spec.add_dependency "rails", ">= 7.0", "< 9"
 end
