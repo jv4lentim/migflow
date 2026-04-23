@@ -4,6 +4,7 @@
 
 Migflow is a Rails engine that mounts at `/migflow` and gives your team a visual timeline, schema diffs, and audit warnings — so you can understand migration impact before it reaches production.
 
+[![Gem Version](https://img.shields.io/gem/v/migflow)](https://rubygems.org/gems/migflow)
 [![CI](https://img.shields.io/github/actions/workflow/status/jv4lentim/migflow/ci.yml?branch=main&label=CI&style=flat)](https://github.com/jv4lentim/migflow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 [![Ruby](https://img.shields.io/badge/Ruby-%3E%3D%203.2-red)](https://www.ruby-lang.org/)
@@ -41,10 +42,10 @@ Tested in CI against every combination below:
 
 ## Installation
 
-Add Migflow to your `Gemfile` (Git source until the first RubyGems release):
+Add Migflow to your `Gemfile`:
 
 ```ruby
-gem "migflow", git: "https://github.com/jv4lentim/migflow"
+gem "migflow"
 ```
 
 ```bash
