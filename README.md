@@ -202,7 +202,6 @@ Planned in rough priority order:
 - [ ] `structure.sql` support
 - [ ] Baseline / waiver system — suppress known warnings explicitly and traceably
 - [ ] Cross-branch comparison — diff migrations between two git branches without switching
-- [ ] RubyGems release
 
 Have an idea? [Open a feature request](https://github.com/jv4lentim/migflow/issues/new?template=feature_request.yml).
 
