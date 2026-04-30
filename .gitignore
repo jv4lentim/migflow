@@ -70,6 +70,12 @@ yarn-debug.log*
 
 .DS_Store
 
+# Built gem artifacts
+*.gem
+
+# VS Code (local rules; do not commit)
+.vscode/
+
 # Cursor IDE (local rules; do not commit)
 .cursor/
 
