@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-29
+
+### Fixed
+- Dashboard assets (JS/CSS) failed to load in API-only Rails apps (`config.api_only = true`) because `stylesheet_link_tag` and `javascript_include_tag` fall back to dead paths when there is no asset pipeline. Assets are now served by a dedicated `StaticController` via engine-relative routes, so the dashboard loads correctly in both API-only and full-stack apps.
+
 ## [0.2.0] - 2026-04-22
 
 ### Fixed
