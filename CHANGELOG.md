@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-30
+
+### Fixed
+- `ActionController::InvalidCrossOriginRequest` raised when the browser loads `app.js` via a `<script>` tag. Rails' same-origin JavaScript protection was firing on the `StaticController` asset responses; forgery protection is now skipped since these are public static assets.
+
 ## [0.2.1] - 2026-04-29
 
 ### Fixed
