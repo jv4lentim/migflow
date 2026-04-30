@@ -3,6 +3,7 @@
 module Migflow
   class StaticController < ActionController::Base
     layout false
+    skip_forgery_protection
 
     def app_js
       send_file Migflow::Engine.root.join("app/assets/migflow/app.js"),

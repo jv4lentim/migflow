@@ -14,6 +14,10 @@ RSpec.describe Migflow::StaticController do
     allow(controller).to receive(:send_file)
   end
 
+  it "skips forgery protection so browsers can load assets without CSRF errors" do
+    expect(described_class.forgery_protection_strategy).to be_nil
+  end
+
   describe "#app_js" do
     it "sends app.js with the correct path and MIME type" do
       controller.app_js
